@@ -1,0 +1,21 @@
+/* SpecForge Constitution Engine — global resets */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  outline: 2px solid #2563eb;
+  outline-offset: 1px;
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
