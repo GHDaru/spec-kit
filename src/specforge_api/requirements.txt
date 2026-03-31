@@ -1,0 +1,6 @@
+# Python dependencies for Vercel serverless deployment
+#
+# "specify-cli[api]" bundles BOTH the specify_cli domain package AND the
+# specforge_api package (see pyproject.toml).  The [api] extra adds
+# FastAPI, Uvicorn, Pydantic, and httpx.
+specify-cli[api]

@@ -23,3 +23,9 @@
   items:
     - name: Module 1 — Constitution Engine
       href: module-1-app.md
+
+# Deployment guides
+- name: Deployment
+  items:
+    - name: Deploy Backend to Vercel
+      href: vercel-deploy.md
