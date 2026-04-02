@@ -5,11 +5,18 @@ import {
   ComplianceCheck,
   ConstitutionHistory,
 } from './modules/constitution';
+import { PlanView } from './modules/plan';
 import './App.css';
 
+type Module = 'module1' | 'module3';
 type Tab = 'view' | 'create' | 'check' | 'history';
 
-const TABS: { id: Tab; label: string }[] = [
+const MODULES: { id: Module; label: string; subtitle: string }[] = [
+  { id: 'module1', label: '🏛️ Module 1', subtitle: 'Constitution Engine' },
+  { id: 'module3', label: '📐 Module 3', subtitle: 'Architecture Planner' },
+];
+
+const CONSTITUTION_TABS: { id: Tab; label: string }[] = [
   { id: 'view', label: '📖 View' },
   { id: 'create', label: '✏️ Create' },
   { id: 'check', label: '🔍 Compliance' },
@@ -17,7 +24,10 @@ const TABS: { id: Tab; label: string }[] = [
 ];
 
 function App() {
+  const [activeModule, setActiveModule] = useState<Module>('module1');
   const [activeTab, setActiveTab] = useState<Tab>('view');
+
+  const currentModuleMeta = MODULES.find((m) => m.id === activeModule)!;
 
   return (
     <div style={appStyle}>
@@ -25,39 +35,73 @@ function App() {
       <header style={headerStyle}>
         <div style={headerInner}>
           <h1 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 700 }}>
-            SpecForge — Constitution Engine
+            SpecForge
           </h1>
-          <span style={{ fontSize: '0.8rem', color: '#93c5fd' }}>Module 1</span>
+          <span style={{ fontSize: '0.8rem', color: '#93c5fd' }}>
+            {currentModuleMeta.subtitle}
+          </span>
+
+          {/* Module switcher */}
+          <div style={{ marginLeft: 'auto', display: 'flex', gap: 4 }}>
+            {MODULES.map((m) => (
+              <button
+                key={m.id}
+                type="button"
+                onClick={() => setActiveModule(m.id)}
+                style={{
+                  padding: '5px 14px',
+                  borderRadius: 20,
+                  border: 'none',
+                  cursor: 'pointer',
+                  fontSize: '0.8rem',
+                  fontWeight: activeModule === m.id ? 700 : 400,
+                  background: activeModule === m.id ? '#fff' : 'rgba(255,255,255,0.15)',
+                  color: activeModule === m.id ? '#1e40af' : '#bfdbfe',
+                  transition: 'background 0.15s, color 0.15s',
+                }}
+              >
+                {m.label}
+              </button>
+            ))}
+          </div>
         </div>
       </header>
 
-      {/* Tab navigation */}
-      <nav style={navStyle}>
-        {TABS.map((t) => (
-          <button
-            key={t.id}
-            onClick={() => setActiveTab(t.id)}
-            style={{
-              ...tabBtnBase,
-              ...(activeTab === t.id ? tabBtnActive : tabBtnInactive),
-            }}
-          >
-            {t.label}
-          </button>
-        ))}
-      </nav>
+      {/* Tab navigation — only for Module 1 */}
+      {activeModule === 'module1' && (
+        <nav style={navStyle}>
+          {CONSTITUTION_TABS.map((t) => (
+            <button
+              key={t.id}
+              type="button"
+              onClick={() => setActiveTab(t.id)}
+              style={{
+                ...tabBtnBase,
+                ...(activeTab === t.id ? tabBtnActive : tabBtnInactive),
+              }}
+            >
+              {t.label}
+            </button>
+          ))}
+        </nav>
+      )}
 
       {/* Content panel */}
       <main style={mainStyle}>
-        {activeTab === 'view' && <ConstitutionView />}
-        {activeTab === 'create' && <ConstitutionCreate />}
-        {activeTab === 'check' && <ComplianceCheck />}
-        {activeTab === 'history' && <ConstitutionHistory />}
+        {activeModule === 'module1' && (
+          <>
+            {activeTab === 'view' && <ConstitutionView />}
+            {activeTab === 'create' && <ConstitutionCreate />}
+            {activeTab === 'check' && <ComplianceCheck />}
+            {activeTab === 'history' && <ConstitutionHistory />}
+          </>
+        )}
+        {activeModule === 'module3' && <PlanView />}
       </main>
 
       {/* Footer */}
       <footer style={footerStyle}>
-        SpecForge · Constitution Engine API ·{' '}
+        SpecForge · API{' '}
         <code style={{ fontSize: '0.8rem' }}>http://localhost:8000/api/v1</code>
       </footer>
     </div>
