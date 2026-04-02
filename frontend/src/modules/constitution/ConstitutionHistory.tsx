@@ -3,7 +3,7 @@ import {
   getConstitutionHistory,
   type ConstitutionHistoryResponse,
 } from '../../api/constitution';
-import { btnStyle, errorStyle, inputStyle } from './ConstitutionView';
+import { btnStyle, errorStyle, inputStyle } from './styles';
 
 export function ConstitutionHistory() {
   const [projectId, setProjectId] = useState('');

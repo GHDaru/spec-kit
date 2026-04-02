@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { checkCompliance, type ComplianceReportResponse } from '../../api/constitution';
-import { btnStyle, errorStyle, inputStyle } from './ConstitutionView';
+import { btnStyle, errorStyle, inputStyle } from './styles';
 
 export function ComplianceCheck() {
   const [projectId, setProjectId] = useState('');
