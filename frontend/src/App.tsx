@@ -1,3 +1,4 @@
+import type React from 'react';
 import { useState } from 'react';
 import {
   ConstitutionView,
@@ -5,19 +6,41 @@ import {
   ComplianceCheck,
   ConstitutionHistory,
 } from './modules/constitution';
+import {
+  SpecView,
+  SpecEditor,
+  UserStoryBoard,
+  RequirementsList,
+  ClarificationPanel,
+  SpecDiffViewer,
+} from './modules/spec';
 import './App.css';
 
-type Tab = 'view' | 'create' | 'check' | 'history';
+type Module = '1' | '2';
 
-const TABS: { id: Tab; label: string }[] = [
+type Tab1 = 'view' | 'create' | 'check' | 'history';
+type Tab2 = 'browse' | 'editor' | 'stories' | 'requirements' | 'clarifications' | 'diff';
+
+const TABS_M1: { id: Tab1; label: string }[] = [
   { id: 'view', label: '📖 View' },
   { id: 'create', label: '✏️ Create' },
   { id: 'check', label: '🔍 Compliance' },
   { id: 'history', label: '📜 History' },
 ];
 
+const TABS_M2: { id: Tab2; label: string }[] = [
+  { id: 'browse', label: '📂 Browse' },
+  { id: 'editor', label: '✏️ Editor' },
+  { id: 'stories', label: '📋 Stories' },
+  { id: 'requirements', label: '📑 Requirements' },
+  { id: 'clarifications', label: '💬 Clarifications' },
+  { id: 'diff', label: '🔀 Diff' },
+];
+
 function App() {
-  const [activeTab, setActiveTab] = useState<Tab>('view');
+  const [activeModule, setActiveModule] = useState<Module>('1');
+  const [activeTab1, setActiveTab1] = useState<Tab1>('view');
+  const [activeTab2, setActiveTab2] = useState<Tab2>('browse');
 
   return (
     <div style={appStyle}>
@@ -25,39 +48,98 @@ function App() {
       <header style={headerStyle}>
         <div style={headerInner}>
           <h1 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 700 }}>
-            SpecForge — Constitution Engine
+            SpecForge
           </h1>
-          <span style={{ fontSize: '0.8rem', color: '#93c5fd' }}>Module 1</span>
+          {/* Module Switcher */}
+          <div style={{ display: 'flex', gap: 4, marginLeft: 'auto' }}>
+            {([
+              { id: '1' as Module, label: 'Module 1 — Constitution Engine' },
+              { id: '2' as Module, label: 'Module 2 — Specification Studio' },
+            ]).map((m) => (
+              <button
+                key={m.id}
+                onClick={() => setActiveModule(m.id)}
+                style={{
+                  padding: '6px 14px',
+                  background: activeModule === m.id ? 'rgba(255,255,255,0.2)' : 'transparent',
+                  border: '1px solid rgba(255,255,255,0.3)',
+                  borderRadius: 6,
+                  color: '#fff',
+                  cursor: 'pointer',
+                  fontSize: '0.8rem',
+                  fontWeight: activeModule === m.id ? 700 : 400,
+                }}
+              >
+                {m.label}
+              </button>
+            ))}
+          </div>
         </div>
       </header>
 
+      {/* Module subtitle */}
+      <div style={subtitleStyle}>
+        {activeModule === '1' ? (
+          <span>⚖️ Constitution Engine — Principles &amp; Governance</span>
+        ) : (
+          <span>📐 Specification Studio — Requirements Intelligence</span>
+        )}
+      </div>
+
       {/* Tab navigation */}
       <nav style={navStyle}>
-        {TABS.map((t) => (
-          <button
-            key={t.id}
-            onClick={() => setActiveTab(t.id)}
-            style={{
-              ...tabBtnBase,
-              ...(activeTab === t.id ? tabBtnActive : tabBtnInactive),
-            }}
-          >
-            {t.label}
-          </button>
-        ))}
+        {activeModule === '1'
+          ? TABS_M1.map((t) => (
+              <button
+                key={t.id}
+                onClick={() => setActiveTab1(t.id)}
+                style={{
+                  ...tabBtnBase,
+                  ...(activeTab1 === t.id ? tabBtnActive : tabBtnInactive),
+                }}
+              >
+                {t.label}
+              </button>
+            ))
+          : TABS_M2.map((t) => (
+              <button
+                key={t.id}
+                onClick={() => setActiveTab2(t.id)}
+                style={{
+                  ...tabBtnBase,
+                  ...(activeTab2 === t.id ? tabBtnActive : tabBtnInactive),
+                }}
+              >
+                {t.label}
+              </button>
+            ))}
       </nav>
 
       {/* Content panel */}
       <main style={mainStyle}>
-        {activeTab === 'view' && <ConstitutionView />}
-        {activeTab === 'create' && <ConstitutionCreate />}
-        {activeTab === 'check' && <ComplianceCheck />}
-        {activeTab === 'history' && <ConstitutionHistory />}
+        {activeModule === '1' && (
+          <>
+            {activeTab1 === 'view' && <ConstitutionView />}
+            {activeTab1 === 'create' && <ConstitutionCreate />}
+            {activeTab1 === 'check' && <ComplianceCheck />}
+            {activeTab1 === 'history' && <ConstitutionHistory />}
+          </>
+        )}
+        {activeModule === '2' && (
+          <>
+            {activeTab2 === 'browse' && <SpecView />}
+            {activeTab2 === 'editor' && <SpecEditor />}
+            {activeTab2 === 'stories' && <UserStoryBoard />}
+            {activeTab2 === 'requirements' && <RequirementsList />}
+            {activeTab2 === 'clarifications' && <ClarificationPanel />}
+            {activeTab2 === 'diff' && <SpecDiffViewer />}
+          </>
+        )}
       </main>
 
       {/* Footer */}
       <footer style={footerStyle}>
-        SpecForge · Constitution Engine API ·{' '}
+        SpecForge · API{' '}
         <code style={{ fontSize: '0.8rem' }}>http://localhost:8000/api/v1</code>
       </footer>
     </div>
@@ -84,12 +166,20 @@ const headerStyle: React.CSSProperties = {
 };
 
 const headerInner: React.CSSProperties = {
-  maxWidth: 900,
+  maxWidth: 1100,
   margin: '0 auto',
-  padding: '16px 0',
+  padding: '12px 0',
   display: 'flex',
   alignItems: 'center',
   gap: 16,
+};
+
+const subtitleStyle: React.CSSProperties = {
+  background: '#1e3a8a',
+  color: '#bfdbfe',
+  fontSize: '0.78rem',
+  padding: '4px 24px',
+  textAlign: 'center',
 };
 
 const navStyle: React.CSSProperties = {
@@ -97,6 +187,7 @@ const navStyle: React.CSSProperties = {
   padding: '0 24px',
   display: 'flex',
   gap: 4,
+  flexWrap: 'wrap',
 };
 
 const tabBtnBase: React.CSSProperties = {
@@ -121,7 +212,7 @@ const tabBtnInactive: React.CSSProperties = {
 
 const mainStyle: React.CSSProperties = {
   flex: 1,
-  maxWidth: 900,
+  maxWidth: 1100,
   width: '100%',
   margin: '0 auto',
   padding: 24,
