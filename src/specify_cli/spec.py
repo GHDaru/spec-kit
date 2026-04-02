@@ -196,7 +196,7 @@ class UserStory:
         """Render the user story as a Markdown section."""
         # All metadata fields are intentionally on a single line, separated by
         # double trailing spaces (Markdown line-break), so the parser can find
-        # all four fields in one pass with a single regex scan.
+        # all five fields in one pass with a single regex scan.
         meta = (
             f"**Priority**: {self.priority.value}  "
             f"**As a**: {self.as_a}  "
@@ -258,12 +258,12 @@ class Spec:
     # User story management
     # ------------------------------------------------------------------
 
-    def _next_story_id(self) -> str:
+    def next_story_id(self) -> str:
         n = len(self.user_stories) + 1
         return f"US-{n:03d}"
 
     def add_story(self, story: UserStory) -> None:
-        """Append a user story; reassigns the ID to maintain sequence."""
+        """Append a user story to the spec."""
         self.user_stories.append(story)
 
     def remove_story(self, story_id: str) -> bool:

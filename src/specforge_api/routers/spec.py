@@ -192,7 +192,7 @@ def create_spec(
 
     for story_req in body.user_stories:
         story = UserStory(
-            id=story_req.id or spec._next_story_id(),
+            id=story_req.id or spec.next_story_id(),
             title=story_req.title,
             as_a=story_req.as_a,
             i_want=story_req.i_want,
@@ -249,7 +249,7 @@ def add_story(
     """Append a new user story to the spec and persist."""
     spec = _load_spec_or_404(project_id, spec_id, cfg.projects_root)
     story = UserStory(
-        id=body.id or spec._next_story_id(),
+        id=body.id or spec.next_story_id(),
         title=body.title,
         as_a=body.as_a,
         i_want=body.i_want,

@@ -218,7 +218,7 @@ export function UserStoryBoard() {
 
   async function handleChangePriority(storyId: string, priority: Priority) {
     if (!spec) return;
-    const previousSpec = spec;
+    const previousSpec = { ...spec, user_stories: [...spec.user_stories] };
     setSpec({
       ...spec,
       user_stories: spec.user_stories.map((s) =>

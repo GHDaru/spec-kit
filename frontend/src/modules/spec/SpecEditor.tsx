@@ -48,7 +48,7 @@ function slugify(text: string): string {
     .trim()
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-|-$/g, '')
-    || `new-spec-${Date.now()}`;
+    || `untitled-spec-${Date.now()}`;
 }
 
 function buildMarkdownPreview(
