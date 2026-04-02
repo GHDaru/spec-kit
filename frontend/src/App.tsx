@@ -1,3 +1,4 @@
+import type React from 'react';
 import { useState } from 'react';
 import {
   ConstitutionView,
@@ -226,5 +227,3 @@ const footerStyle: React.CSSProperties = {
   fontSize: '0.8rem',
   color: '#6b7280',
 };
-
-import type React from 'react';

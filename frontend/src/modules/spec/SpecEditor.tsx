@@ -443,19 +443,6 @@ export function SpecEditor({
                 placeholder="Describe the functional requirement…"
                 style={{ ...inputStyle, flex: 1 }}
               />
-              <select
-                value={req.story_id ?? ''}
-                onChange={(e) => updateReq(ri, 'story_id', e.target.value || null)}
-                style={{ ...inputStyle, width: 140, fontSize: '0.8rem' }}
-                title="Link to user story"
-              >
-                <option value="">— No story —</option>
-                {stories.map((s, si) => (
-                  <option key={si} value={`story-${si}`}>
-                    US-{String(si + 1).padStart(3, '0')} {s.title ? `· ${s.title.slice(0, 20)}` : ''}
-                  </option>
-                ))}
-              </select>
               {requirements.length > 1 && (
                 <button
                   type="button"
