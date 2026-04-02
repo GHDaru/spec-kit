@@ -14,12 +14,21 @@ import {
   ClarificationPanel,
   SpecDiffViewer,
 } from './modules/spec';
+import {
+  PlanView,
+  TechStackSelector,
+  ProjectTreePreview,
+  ERDiagram,
+  ResearchReportViewer,
+  APIContractEditor,
+} from './modules/plan';
 import './App.css';
 
-type Module = '1' | '2';
+type Module = '1' | '2' | '3';
 
 type Tab1 = 'view' | 'create' | 'check' | 'history';
 type Tab2 = 'browse' | 'editor' | 'stories' | 'requirements' | 'clarifications' | 'diff';
+type Tab3 = 'browse' | 'tech-stack' | 'structure' | 'data-model' | 'research' | 'api-contract';
 
 const TABS_M1: { id: Tab1; label: string }[] = [
   { id: 'view', label: '📖 View' },
@@ -37,10 +46,20 @@ const TABS_M2: { id: Tab2; label: string }[] = [
   { id: 'diff', label: '🔀 Diff' },
 ];
 
+const TABS_M3: { id: Tab3; label: string }[] = [
+  { id: 'browse', label: '📂 Browse' },
+  { id: 'tech-stack', label: '🔧 Tech Stack' },
+  { id: 'structure', label: '🌳 Structure' },
+  { id: 'data-model', label: '🗄️ Data Model' },
+  { id: 'research', label: '🔬 Research' },
+  { id: 'api-contract', label: '🔌 API Contract' },
+];
+
 function App() {
   const [activeModule, setActiveModule] = useState<Module>('1');
   const [activeTab1, setActiveTab1] = useState<Tab1>('view');
   const [activeTab2, setActiveTab2] = useState<Tab2>('browse');
+  const [activeTab3, setActiveTab3] = useState<Tab3>('browse');
 
   return (
     <div style={appStyle}>
@@ -51,10 +70,11 @@ function App() {
             SpecForge
           </h1>
           {/* Module Switcher */}
-          <div style={{ display: 'flex', gap: 4, marginLeft: 'auto' }}>
+          <div style={{ display: 'flex', gap: 4, marginLeft: 'auto', flexWrap: 'wrap' }}>
             {([
               { id: '1' as Module, label: 'Module 1 — Constitution Engine' },
               { id: '2' as Module, label: 'Module 2 — Specification Studio' },
+              { id: '3' as Module, label: 'Module 3 — Architecture Planner' },
             ]).map((m) => (
               <button
                 key={m.id}
@@ -81,8 +101,10 @@ function App() {
       <div style={subtitleStyle}>
         {activeModule === '1' ? (
           <span>⚖️ Constitution Engine — Principles &amp; Governance</span>
-        ) : (
+        ) : activeModule === '2' ? (
           <span>📐 Specification Studio — Requirements Intelligence</span>
+        ) : (
+          <span>🏗️ Architecture Planner — Technical Design &amp; Research</span>
         )}
       </div>
 
@@ -101,13 +123,26 @@ function App() {
                 {t.label}
               </button>
             ))
-          : TABS_M2.map((t) => (
+          : activeModule === '2'
+          ? TABS_M2.map((t) => (
               <button
                 key={t.id}
                 onClick={() => setActiveTab2(t.id)}
                 style={{
                   ...tabBtnBase,
                   ...(activeTab2 === t.id ? tabBtnActive : tabBtnInactive),
+                }}
+              >
+                {t.label}
+              </button>
+            ))
+          : TABS_M3.map((t) => (
+              <button
+                key={t.id}
+                onClick={() => setActiveTab3(t.id)}
+                style={{
+                  ...tabBtnBase,
+                  ...(activeTab3 === t.id ? tabBtnActive : tabBtnInactive),
                 }}
               >
                 {t.label}
@@ -133,6 +168,16 @@ function App() {
             {activeTab2 === 'requirements' && <RequirementsList />}
             {activeTab2 === 'clarifications' && <ClarificationPanel />}
             {activeTab2 === 'diff' && <SpecDiffViewer />}
+          </>
+        )}
+        {activeModule === '3' && (
+          <>
+            {activeTab3 === 'browse' && <PlanView />}
+            {activeTab3 === 'tech-stack' && <TechStackSelector />}
+            {activeTab3 === 'structure' && <ProjectTreePreview />}
+            {activeTab3 === 'data-model' && <ERDiagram />}
+            {activeTab3 === 'research' && <ResearchReportViewer />}
+            {activeTab3 === 'api-contract' && <APIContractEditor />}
           </>
         )}
       </main>
