@@ -194,13 +194,19 @@ class UserStory:
 
     def to_markdown(self) -> str:
         """Render the user story as a Markdown section."""
-        lines = [
-            f"### {self.id}: {self.title}",
-            "",
+        # All metadata fields are intentionally on a single line, separated by
+        # double trailing spaces (Markdown line-break), so the parser can find
+        # all four fields in one pass with a single regex scan.
+        meta = (
             f"**Priority**: {self.priority.value}  "
             f"**As a**: {self.as_a}  "
             f"**I want**: {self.i_want}  "
-            f"**So that**: {self.so_that}",
+            f"**So that**: {self.so_that}"
+        )
+        lines = [
+            f"### {self.id}: {self.title}",
+            "",
+            meta,
         ]
         if self.scenarios:
             lines += ["", "#### Acceptance Scenarios", ""]
