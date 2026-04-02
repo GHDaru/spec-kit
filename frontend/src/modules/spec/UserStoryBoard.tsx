@@ -218,6 +218,7 @@ export function UserStoryBoard() {
 
   async function handleChangePriority(storyId: string, priority: Priority) {
     if (!spec) return;
+    const previousSpec = spec;
     setSpec({
       ...spec,
       user_stories: spec.user_stories.map((s) =>
@@ -233,6 +234,7 @@ export function UserStoryBoard() {
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
     } catch (e) {
+      setSpec(previousSpec);
       setError(e instanceof Error ? e.message : 'Save failed');
     } finally {
       setSaving(false);

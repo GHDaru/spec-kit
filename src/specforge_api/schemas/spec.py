@@ -1,4 +1,4 @@
-"""Pydantic request/response schemas for the Specification Studio (Module 2)."""
+"""Pydantic request/response schemas for the Specification Studio API (Module 2)."""
 
 from __future__ import annotations
 
@@ -7,112 +7,143 @@ from typing import Optional
 from pydantic import BaseModel
 
 
-# ──────────────────────────────────────────────────────────────────────────────
-# Nested value-object schemas
-# ──────────────────────────────────────────────────────────────────────────────
+# ---------------------------------------------------------------------------
+# Acceptance Scenario
+# ---------------------------------------------------------------------------
+
 
 class AcceptanceScenarioSchema(BaseModel):
-    id: str
+    """Mirrors the :class:`~specify_cli.spec.AcceptanceScenario` value object."""
+
+    title: str
     given: str
     when: str
     then: str
 
 
-class FunctionalRequirementSchema(BaseModel):
-    id: str
-    description: str
-    story_id: Optional[str] = None
-
-
-class ClarificationItemSchema(BaseModel):
-    id: str
-    marker: str
-    suggestion: str = ""
-    resolved: bool = False
-    resolution: Optional[str] = None
+# ---------------------------------------------------------------------------
+# User Story
+# ---------------------------------------------------------------------------
 
 
 class UserStorySchema(BaseModel):
+    """Mirrors the :class:`~specify_cli.spec.UserStory` entity."""
+
     id: str
     title: str
-    description: str
-    priority: str  # P1 | P2 | P3
-    acceptance_scenarios: list[AcceptanceScenarioSchema] = []
+    as_a: str
+    i_want: str
+    so_that: str
+    priority: str = "P2"
+    scenarios: list[AcceptanceScenarioSchema] = []
 
 
-# ──────────────────────────────────────────────────────────────────────────────
-# Spec response / request schemas
-# ──────────────────────────────────────────────────────────────────────────────
+class AddUserStoryRequest(BaseModel):
+    """Request body for adding a user story to a spec."""
 
-class SpecSummaryResponse(BaseModel):
-    """Lightweight summary returned in list endpoints."""
-
-    id: str
-    feature_name: str
-    description: str
-    version: str
-    created_at: str
-    updated_at: str
-    story_count: int
-    requirement_count: int
-
-
-class SpecResponse(BaseModel):
-    """Full spec payload."""
-
-    id: str
-    feature_name: str
-    description: str
-    version: str
-    user_stories: list[UserStorySchema] = []
-    functional_requirements: list[FunctionalRequirementSchema] = []
-    clarification_items: list[ClarificationItemSchema] = []
-    created_at: str
-    updated_at: str
-
-
-# ──────────────────────────────────────────────────────────────────────────────
-# Request bodies
-# ──────────────────────────────────────────────────────────────────────────────
-
-class AcceptanceScenarioCreateRequest(BaseModel):
-    given: str
-    when: str
-    then: str
-
-
-class UserStoryCreateRequest(BaseModel):
+    id: Optional[str] = None
     title: str
-    description: str
-    priority: str = "P1"
-    acceptance_scenarios: list[AcceptanceScenarioCreateRequest] = []
+    as_a: str
+    i_want: str
+    so_that: str
+    priority: str = "P2"
+    scenarios: list[AcceptanceScenarioSchema] = []
 
 
-class FunctionalRequirementCreateRequest(BaseModel):
+class UpdateStoryPriorityRequest(BaseModel):
+    """Request body for updating a user story's priority."""
+
+    priority: str
+
+
+# ---------------------------------------------------------------------------
+# Functional Requirement
+# ---------------------------------------------------------------------------
+
+
+class FunctionalRequirementSchema(BaseModel):
+    """Mirrors the :class:`~specify_cli.spec.FunctionalRequirement` value object."""
+
+    id: str
     description: str
     story_id: Optional[str] = None
 
 
-class SpecCreateRequest(BaseModel):
-    feature_name: str
-    description: str = ""
-    version: str = "1.0.0"
-    user_stories: list[UserStoryCreateRequest] = []
-    functional_requirements: list[FunctionalRequirementCreateRequest] = []
+class AddRequirementRequest(BaseModel):
+    """Request body for adding a functional requirement."""
+
+    description: str
+    story_id: Optional[str] = None
 
 
-class SpecUpdateRequest(BaseModel):
-    feature_name: Optional[str] = None
-    description: Optional[str] = None
-    version: Optional[str] = None
-    user_stories: Optional[list[UserStoryCreateRequest]] = None
-    functional_requirements: Optional[list[FunctionalRequirementCreateRequest]] = None
+# ---------------------------------------------------------------------------
+# Clarification
+# ---------------------------------------------------------------------------
 
 
-class ResolveClarificationRequest(BaseModel):
-    resolution: str
+class ClarificationItemSchema(BaseModel):
+    """Mirrors the :class:`~specify_cli.spec.ClarificationItem` value object."""
+
+    id: str
+    description: str
+    status: str
+    resolution: Optional[str] = None
 
 
 class AddClarificationRequest(BaseModel):
-    marker: str
-    suggestion: str = ""
+    """Request body for adding a clarification item."""
+
+    description: str
+
+
+class ResolveClarificationRequest(BaseModel):
+    """Request body for resolving a clarification item."""
+
+    resolution: str
+
+
+# ---------------------------------------------------------------------------
+# Spec (aggregate)
+# ---------------------------------------------------------------------------
+
+
+class SpecResponse(BaseModel):
+    """Full spec payload returned by the API."""
+
+    spec_id: str
+    title: str
+    description: str
+    version: str
+    created_date: Optional[str] = None
+    user_stories: list[UserStorySchema] = []
+    requirements: list[FunctionalRequirementSchema] = []
+    clarifications: list[ClarificationItemSchema] = []
+
+
+class CreateSpecRequest(BaseModel):
+    """Request body for creating a new spec."""
+
+    title: str
+    description: str = ""
+    user_stories: list[AddUserStoryRequest] = []
+    requirements: list[AddRequirementRequest] = []
+    clarifications: list[AddClarificationRequest] = []
+
+
+class SpecSummary(BaseModel):
+    """Lightweight spec summary used in list responses."""
+
+    spec_id: str
+    title: str
+    version: str
+    created_date: Optional[str] = None
+    story_count: int
+    requirement_count: int
+    open_clarification_count: int
+
+
+class SpecListResponse(BaseModel):
+    """List of spec summaries for a project."""
+
+    project_id: str
+    specs: list[SpecSummary] = []
