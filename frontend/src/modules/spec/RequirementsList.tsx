@@ -1,7 +1,7 @@
+import type React from 'react';
 import { useState } from 'react';
 import {
   getSpec,
-  updateSpec,
   type SpecResponse,
   type FunctionalRequirementSchema,
 } from '../../api/spec';
@@ -17,21 +17,9 @@ type SortDir = 'asc' | 'desc';
 function RequirementRow({
   req,
   storyTitle,
-  editing,
-  editValue,
-  onEdit,
-  onEditChange,
-  onEditSave,
-  onEditCancel,
 }: {
   req: FunctionalRequirementSchema;
   storyTitle: string | null;
-  editing: boolean;
-  editValue: string;
-  onEdit: () => void;
-  onEditChange: (v: string) => void;
-  onEditSave: () => void;
-  onEditCancel: () => void;
 }) {
   return (
     <tr style={{ borderBottom: '1px solid #e5e7eb' }}>
@@ -39,55 +27,10 @@ function RequirementRow({
         <code style={{ fontWeight: 700, color: '#2563eb' }}>{req.id}</code>
       </td>
       <td style={tdStyle}>
-        {editing ? (
-          <div style={{ display: 'flex', gap: 6 }}>
-            <input
-              type="text"
-              value={editValue}
-              onChange={(e) => onEditChange(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') onEditSave();
-                if (e.key === 'Escape') onEditCancel();
-              }}
-              style={{ ...inputStyle, flex: 1, padding: '4px 8px', fontSize: '0.85rem' }}
-              autoFocus
-            />
-            <button
-              onClick={onEditSave}
-              style={{ ...btnStyle, padding: '4px 10px', fontSize: '0.8rem', background: '#059669' }}
-            >
-              ✓
-            </button>
-            <button
-              onClick={onEditCancel}
-              style={{ ...btnStyle, padding: '4px 10px', fontSize: '0.8rem', background: '#6b7280' }}
-            >
-              ✕
-            </button>
-          </div>
-        ) : (
-          <span style={{ fontSize: '0.875rem' }}>{req.description}</span>
-        )}
+        <span style={{ fontSize: '0.875rem' }}>{req.description}</span>
       </td>
       <td style={{ ...tdStyle, color: '#6b7280', fontSize: '0.8rem' }}>
         {storyTitle ?? '—'}
-      </td>
-      <td style={{ ...tdStyle, textAlign: 'right' }}>
-        {!editing && (
-          <button
-            onClick={onEdit}
-            style={{
-              background: 'none',
-              border: 'none',
-              cursor: 'pointer',
-              color: '#2563eb',
-              fontSize: '0.8rem',
-            }}
-            title="Edit description"
-          >
-            ✏
-          </button>
-        )}
       </td>
     </tr>
   );
@@ -98,13 +41,10 @@ export function RequirementsList() {
   const [specId, setSpecId] = useState('');
   const [spec, setSpec] = useState<SpecResponse | null>(null);
   const [loading, setLoading] = useState(false);
-  const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState('');
   const [sortField, setSortField] = useState<SortField>('id');
   const [sortDir, setSortDir] = useState<SortDir>('asc');
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [editValue, setEditValue] = useState('');
 
   async function handleLoad() {
     if (!projectId.trim() || !specId.trim()) return;
@@ -128,7 +68,7 @@ export function RequirementsList() {
 
   function getRequirements() {
     if (!spec) return [];
-    let reqs = [...spec.functional_requirements];
+    let reqs = [...spec.requirements];
 
     if (filter.trim()) {
       const q = filter.toLowerCase();
@@ -166,35 +106,11 @@ export function RequirementsList() {
     return sortDir === 'asc' ? ' ↑' : ' ↓';
   }
 
-  async function saveEditedDescription(reqId: string, newDesc: string) {
-    if (!spec) return;
-    const updated = spec.functional_requirements.map((r) =>
-      r.id === reqId ? { ...r, description: newDesc } : r,
-    );
-    setSpec({ ...spec, functional_requirements: updated });
-    setEditingId(null);
-
-    setSaving(true);
-    try {
-      await updateSpec(projectId.trim(), spec.id, {
-        functional_requirements: updated.map((r) => ({
-          description: r.description,
-          story_id: r.story_id ?? null,
-        })),
-      });
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Save failed');
-    } finally {
-      setSaving(false);
-    }
-  }
-
   return (
     <div>
       <h2 style={{ marginTop: 0 }}>Requirements List</h2>
       <p style={{ color: '#6b7280', fontSize: '0.9rem' }}>
         Sortable, filterable table of functional requirements with user story traceability.
-        Click the pencil icon to edit a description inline.
       </p>
 
       <div style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap' }}>
@@ -207,7 +123,7 @@ export function RequirementsList() {
         />
         <input
           type="text"
-          placeholder="Spec ID (UUID)"
+          placeholder="Spec ID"
           value={specId}
           onChange={(e) => setSpecId(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && handleLoad()}
@@ -223,14 +139,13 @@ export function RequirementsList() {
       </div>
 
       {error && <div style={errorStyle}>⚠ {error}</div>}
-      {saving && <div style={{ color: '#6b7280', fontSize: '0.8rem', marginBottom: 8 }}>Saving…</div>}
 
       {spec && (
         <div>
           <div style={{ marginBottom: 10, display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-            <strong style={{ fontSize: '0.9rem' }}>{spec.feature_name}</strong>
+            <strong style={{ fontSize: '0.9rem' }}>{spec.title}</strong>
             <span style={{ color: '#6b7280', fontSize: '0.8rem' }}>
-              {spec.functional_requirements.length} requirement{spec.functional_requirements.length !== 1 ? 's' : ''}
+              {spec.requirements.length} requirement{spec.requirements.length !== 1 ? 's' : ''}
             </span>
             <input
               type="text"
@@ -241,7 +156,7 @@ export function RequirementsList() {
             />
           </div>
 
-          {spec.functional_requirements.length === 0 ? (
+          {spec.requirements.length === 0 ? (
             <p style={{ color: '#6b7280' }}>No functional requirements defined for this spec.</p>
           ) : (
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem' }}>
@@ -256,7 +171,6 @@ export function RequirementsList() {
                   <th style={{ ...thStyle, cursor: 'pointer', width: 180 }} onClick={() => toggleSort('story')}>
                     Linked Story{sortIcon('story')}
                   </th>
-                  <th style={{ ...thStyle, width: 40 }} />
                 </tr>
               </thead>
               <tbody>
@@ -265,12 +179,6 @@ export function RequirementsList() {
                     key={r.id}
                     req={r}
                     storyTitle={storyTitle(r.story_id)}
-                    editing={editingId === r.id}
-                    editValue={editValue}
-                    onEdit={() => { setEditingId(r.id); setEditValue(r.description); }}
-                    onEditChange={setEditValue}
-                    onEditSave={() => saveEditedDescription(r.id, editValue)}
-                    onEditCancel={() => setEditingId(null)}
                   />
                 ))}
               </tbody>

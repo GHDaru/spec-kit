@@ -26,25 +26,26 @@ function diffLines(
 
 function specToText(spec: SpecResponse): string {
   const lines: string[] = [];
-  lines.push(`# ${spec.feature_name}`);
+  lines.push(`# ${spec.title}`);
   lines.push(`Version: ${spec.version}`);
   if (spec.description) lines.push(`\n${spec.description}`);
   lines.push('');
 
   for (const [i, s] of spec.user_stories.entries()) {
     lines.push(`[${s.priority}] US-${String(i + 1).padStart(3, '0')}: ${s.title}`);
-    if (s.description) lines.push(`  ${s.description}`);
-    for (const sc of s.acceptance_scenarios) {
+    lines.push(`  As a ${s.as_a}, I want ${s.i_want}, so that ${s.so_that}`);
+    for (const sc of s.scenarios) {
+      if (sc.title) lines.push(`  Scenario: ${sc.title}`);
       lines.push(`  Given ${sc.given}`);
       lines.push(`  When  ${sc.when}`);
       lines.push(`  Then  ${sc.then}`);
     }
   }
 
-  if (spec.functional_requirements.length > 0) {
+  if (spec.requirements.length > 0) {
     lines.push('');
     lines.push('Functional Requirements:');
-    for (const r of spec.functional_requirements) {
+    for (const r of spec.requirements) {
       lines.push(`  ${r.id}: ${r.description}`);
     }
   }
@@ -151,12 +152,12 @@ export function SpecDiffViewer() {
             }}
           >
             <span>
-              <strong>{specA.feature_name}</strong>{' '}
+              <strong>{specA.title}</strong>{' '}
               <span style={{ color: '#6b7280' }}>v{specA.version}</span>
             </span>
             <span style={{ color: '#9ca3af' }}>→</span>
             <span>
-              <strong>{specB.feature_name}</strong>{' '}
+              <strong>{specB.title}</strong>{' '}
               <span style={{ color: '#6b7280' }}>v{specB.version}</span>
             </span>
             <span style={{ marginLeft: 'auto' }}>

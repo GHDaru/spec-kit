@@ -3,13 +3,11 @@ import { useState } from 'react';
 import {
   listSpecs,
   getSpec,
-  deleteSpec,
-  type SpecSummaryResponse,
+  type SpecSummary,
   type SpecResponse,
 } from '../../api/spec';
 import {
   btnStyle,
-  btnDangerStyle,
   errorStyle,
   inputStyle,
   PRIORITY_COLOR,
@@ -20,11 +18,9 @@ import {
 function SpecSummaryCard({
   spec,
   onSelect,
-  onDelete,
 }: {
-  spec: SpecSummaryResponse;
+  spec: SpecSummary;
   onSelect: (id: string) => void;
-  onDelete: (id: string) => void;
 }) {
   return (
     <div
@@ -39,13 +35,13 @@ function SpecSummaryCard({
     >
       <div
         style={{ flex: 1 }}
-        onClick={() => onSelect(spec.id)}
+        onClick={() => onSelect(spec.spec_id)}
         role="button"
         tabIndex={0}
-        onKeyDown={(e) => e.key === 'Enter' && onSelect(spec.id)}
+        onKeyDown={(e) => e.key === 'Enter' && onSelect(spec.spec_id)}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-          <strong style={{ fontSize: '1rem' }}>{spec.feature_name}</strong>
+          <strong style={{ fontSize: '1rem' }}>{spec.title}</strong>
           <span
             style={{
               fontSize: '0.7rem',
@@ -58,22 +54,17 @@ function SpecSummaryCard({
             v{spec.version}
           </span>
         </div>
-        <p style={{ margin: '0 0 6px', fontSize: '0.85rem', color: '#4b5563' }}>
-          {spec.description || <em>No description</em>}
-        </p>
         <div style={{ display: 'flex', gap: 16, fontSize: '0.78rem', color: '#6b7280' }}>
           <span>📖 {spec.story_count} stories</span>
           <span>📋 {spec.requirement_count} requirements</span>
-          <span>🕐 {new Date(spec.updated_at).toLocaleDateString()}</span>
+          {spec.open_clarification_count > 0 && (
+            <span style={{ color: '#d97706' }}>⚠ {spec.open_clarification_count} open clarifications</span>
+          )}
+          {spec.created_date && (
+            <span>🕐 {new Date(spec.created_date).toLocaleDateString()}</span>
+          )}
         </div>
       </div>
-      <button
-        onClick={() => onDelete(spec.id)}
-        style={{ ...btnDangerStyle, padding: '4px 10px', fontSize: '0.8rem', flexShrink: 0 }}
-        title="Delete spec"
-      >
-        🗑
-      </button>
     </div>
   );
 }
@@ -93,10 +84,10 @@ function SpecDetail({ spec }: { spec: SpecResponse }) {
           marginBottom: 16,
         }}
       >
-        <h3 style={{ margin: '0 0 4px' }}>{spec.feature_name}</h3>
+        <h3 style={{ margin: '0 0 4px' }}>{spec.title}</h3>
         <p style={{ margin: '0 0 4px', fontSize: '0.85rem', color: '#0369a1' }}>
           Version <strong>{spec.version}</strong> · ID:{' '}
-          <code style={{ fontSize: '0.75rem' }}>{spec.id}</code>
+          <code style={{ fontSize: '0.75rem' }}>{spec.spec_id}</code>
         </p>
         {spec.description && (
           <p style={{ margin: '6px 0 0', fontSize: '0.875rem', color: '#374151' }}>
@@ -127,16 +118,16 @@ function SpecDetail({ spec }: { spec: SpecResponse }) {
               >
                 <strong>{s.title}</strong>
                 <p style={{ margin: '4px 0 0', fontSize: '0.85rem', color: '#4b5563' }}>
-                  {s.description}
+                  As a {s.as_a}, I want {s.i_want}, so that {s.so_that}
                 </p>
-                {s.acceptance_scenarios.length > 0 && (
+                {s.scenarios.length > 0 && (
                   <div style={{ marginTop: 8 }}>
                     <span style={{ fontSize: '0.75rem', color: '#6b7280', fontWeight: 600 }}>
-                      Scenarios ({s.acceptance_scenarios.length}):
+                      Scenarios ({s.scenarios.length}):
                     </span>
-                    {s.acceptance_scenarios.map((sc) => (
+                    {s.scenarios.map((sc) => (
                       <div
-                        key={sc.id}
+                        key={sc.title}
                         style={{
                           fontSize: '0.8rem',
                           background: '#fff',
@@ -146,6 +137,9 @@ function SpecDetail({ spec }: { spec: SpecResponse }) {
                           marginTop: 4,
                         }}
                       >
+                        {sc.title && (
+                          <div style={{ fontWeight: 600, color: '#374151', marginBottom: 2 }}>{sc.title}</div>
+                        )}
                         <div>
                           <strong style={{ color: '#7c3aed' }}>Given</strong> {sc.given}
                         </div>
@@ -165,11 +159,11 @@ function SpecDetail({ spec }: { spec: SpecResponse }) {
         );
       })}
 
-      {/* Functional Requirements */}
-      {spec.functional_requirements.length > 0 && (
+      {/* Requirements */}
+      {spec.requirements.length > 0 && (
         <div style={{ marginBottom: 16 }}>
           <h4 style={{ marginBottom: 8 }}>
-            Functional Requirements ({spec.functional_requirements.length})
+            Functional Requirements ({spec.requirements.length})
           </h4>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem' }}>
             <thead>
@@ -180,7 +174,7 @@ function SpecDetail({ spec }: { spec: SpecResponse }) {
               </tr>
             </thead>
             <tbody>
-              {spec.functional_requirements.map((r) => (
+              {spec.requirements.map((r) => (
                 <tr key={r.id} style={{ borderBottom: '1px solid #e5e7eb' }}>
                   <td style={tdStyle}>
                     <code style={{ fontWeight: 700 }}>{r.id}</code>
@@ -199,30 +193,25 @@ function SpecDetail({ spec }: { spec: SpecResponse }) {
       )}
 
       {/* Clarifications */}
-      {spec.clarification_items.length > 0 && (
+      {spec.clarifications.length > 0 && (
         <div>
           <h4 style={{ marginBottom: 8 }}>
-            Clarifications ({spec.clarification_items.filter((c) => !c.resolved).length} pending)
+            Clarifications ({spec.clarifications.filter((c) => c.status === 'open').length} pending)
           </h4>
-          {spec.clarification_items.map((c) => (
+          {spec.clarifications.map((c) => (
             <div
               key={c.id}
               style={{
-                background: c.resolved ? '#f0fdf4' : '#fffbeb',
-                border: `1px solid ${c.resolved ? '#86efac' : '#fde68a'}`,
+                background: c.status === 'resolved' ? '#f0fdf4' : '#fffbeb',
+                border: `1px solid ${c.status === 'resolved' ? '#86efac' : '#fde68a'}`,
                 borderRadius: 6,
                 padding: '8px 12px',
                 marginBottom: 6,
               }}
             >
               <div style={{ fontWeight: 600, fontSize: '0.85rem', marginBottom: 2 }}>
-                {c.resolved ? '✓ Resolved' : '⚠ Pending'}: {c.marker}
+                {c.status === 'resolved' ? '✓ Resolved' : '⚠ Pending'}: {c.description}
               </div>
-              {c.suggestion && (
-                <p style={{ margin: '2px 0', fontSize: '0.8rem', color: '#4b5563' }}>
-                  Suggestion: {c.suggestion}
-                </p>
-              )}
               {c.resolution && (
                 <p style={{ margin: '2px 0', fontSize: '0.8rem', color: '#15803d' }}>
                   Resolution: {c.resolution}
@@ -238,7 +227,7 @@ function SpecDetail({ spec }: { spec: SpecResponse }) {
 
 export function SpecView() {
   const [projectId, setProjectId] = useState('');
-  const [specs, setSpecs] = useState<SpecSummaryResponse[] | null>(null);
+  const [specs, setSpecs] = useState<SpecSummary[] | null>(null);
   const [selectedSpec, setSelectedSpec] = useState<SpecResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -251,7 +240,7 @@ export function SpecView() {
     setSelectedSpec(null);
     try {
       const data = await listSpecs(projectId.trim());
-      setSpecs(data);
+      setSpecs(data.specs);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Unknown error');
     } finally {
@@ -265,21 +254,6 @@ export function SpecView() {
     try {
       const spec = await getSpec(projectId.trim(), specId);
       setSelectedSpec(spec);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Unknown error');
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function handleDelete(specId: string) {
-    if (!confirm('Delete this spec? This cannot be undone.')) return;
-    setLoading(true);
-    try {
-      await deleteSpec(projectId.trim(), specId);
-      if (selectedSpec?.id === specId) setSelectedSpec(null);
-      const data = await listSpecs(projectId.trim());
-      setSpecs(data);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Unknown error');
     } finally {
@@ -332,10 +306,9 @@ export function SpecView() {
           )}
           {specs.map((s) => (
             <SpecSummaryCard
-              key={s.id}
+              key={s.spec_id}
               spec={s}
               onSelect={handleSelect}
-              onDelete={handleDelete}
             />
           ))}
         </div>

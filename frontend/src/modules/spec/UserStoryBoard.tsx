@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import {
   getSpec,
-  updateSpec,
+  updateStoryPriority,
   type SpecResponse,
   type UserStorySchema,
   type Priority,
@@ -63,18 +63,16 @@ function StoryCard({
         <PriorityBadge priority={story.priority} />
         <span style={{ fontWeight: 600, fontSize: '0.9rem', flex: 1 }}>{story.title}</span>
         <span style={{ color: '#9ca3af', fontSize: '0.75rem' }}>
-          {story.acceptance_scenarios.length} scenario{story.acceptance_scenarios.length !== 1 ? 's' : ''}
+          {story.scenarios.length} scenario{story.scenarios.length !== 1 ? 's' : ''}
         </span>
         <span style={{ color: '#9ca3af' }}>{expanded ? '▲' : '▼'}</span>
       </div>
 
       {expanded && (
         <>
-          {story.description && (
-            <p style={{ margin: '4px 0 8px', fontSize: '0.85rem', color: '#4b5563' }}>
-              {story.description}
-            </p>
-          )}
+          <p style={{ margin: '4px 0 8px', fontSize: '0.85rem', color: '#4b5563' }}>
+            As a {story.as_a}, I want {story.i_want}, so that {story.so_that}
+          </p>
           <div style={{ display: 'flex', gap: 6, marginBottom: 8 }}>
             {PRIORITIES.map((p) => (
               <button
@@ -95,14 +93,14 @@ function StoryCard({
               </button>
             ))}
           </div>
-          {story.acceptance_scenarios.length > 0 && (
+          {story.scenarios.length > 0 && (
             <div>
               <span style={{ fontSize: '0.75rem', color: '#6b7280', fontWeight: 600 }}>
                 Acceptance Scenarios:
               </span>
-              {story.acceptance_scenarios.map((sc) => (
+              {story.scenarios.map((sc) => (
                 <div
-                  key={sc.id}
+                  key={sc.title}
                   style={{
                     fontSize: '0.8rem',
                     background: '#f8fafc',
@@ -112,6 +110,9 @@ function StoryCard({
                     marginTop: 4,
                   }}
                 >
+                  {sc.title && (
+                    <div style={{ fontWeight: 600, color: '#374151', marginBottom: 2 }}>{sc.title}</div>
+                  )}
                   <div>
                     <strong style={{ color: '#7c3aed' }}>Given</strong> {sc.given}
                   </div>
@@ -217,29 +218,18 @@ export function UserStoryBoard() {
 
   async function handleChangePriority(storyId: string, priority: Priority) {
     if (!spec) return;
-    const updated: SpecResponse = {
+    setSpec({
       ...spec,
       user_stories: spec.user_stories.map((s) =>
         s.id === storyId ? { ...s, priority } : s,
       ),
-    };
-    setSpec(updated);
+    });
 
     setSaving(true);
     setSaved(false);
     try {
-      await updateSpec(projectId.trim(), spec.id, {
-        user_stories: updated.user_stories.map((s) => ({
-          title: s.title,
-          description: s.description,
-          priority: s.priority,
-          acceptance_scenarios: s.acceptance_scenarios.map((sc) => ({
-            given: sc.given,
-            when: sc.when,
-            then: sc.then,
-          })),
-        })),
-      });
+      const updated = await updateStoryPriority(projectId.trim(), spec.spec_id, storyId, priority);
+      setSpec(updated);
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
     } catch (e) {
@@ -267,7 +257,7 @@ export function UserStoryBoard() {
         />
         <input
           type="text"
-          placeholder="Spec ID (UUID)"
+          placeholder="Spec ID"
           value={specId}
           onChange={(e) => setSpecId(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && handleLoad()}
@@ -295,7 +285,7 @@ export function UserStoryBoard() {
       {spec && (
         <div>
           <div style={{ marginBottom: 12 }}>
-            <strong>{spec.feature_name}</strong>{' '}
+            <strong>{spec.title}</strong>{' '}
             <span style={{ color: '#6b7280', fontSize: '0.85rem' }}>v{spec.version}</span>
           </div>
 

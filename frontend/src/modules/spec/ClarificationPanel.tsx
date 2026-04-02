@@ -3,7 +3,6 @@ import {
   getSpec,
   addClarification,
   resolveClarification,
-  rejectClarification,
   type SpecResponse,
   type ClarificationItemSchema,
 } from '../../api/spec';
@@ -19,29 +18,27 @@ import {
 function ClarificationCard({
   item,
   onResolve,
-  onReject,
 }: {
   item: ClarificationItemSchema;
   onResolve: (id: string, resolution: string) => void;
-  onReject: (id: string) => void;
 }) {
-  const [resolution, setResolution] = useState(item.suggestion ?? '');
-  const [expanded, setExpanded] = useState(!item.resolved);
+  const [resolution, setResolution] = useState('');
+  const [expanded, setExpanded] = useState(item.status !== 'resolved');
 
-  if (item.resolved) {
+  if (item.status === 'resolved') {
     return (
       <div
         style={{
-          background: item.resolution ? '#f0fdf4' : '#f3f4f6',
-          border: `1px solid ${item.resolution ? '#86efac' : '#d1d5db'}`,
+          background: '#f0fdf4',
+          border: '1px solid #86efac',
           borderRadius: 6,
           padding: '8px 12px',
           marginBottom: 6,
           opacity: 0.8,
         }}
       >
-        <div style={{ fontSize: '0.8rem', fontWeight: 600, color: item.resolution ? '#15803d' : '#6b7280' }}>
-          {item.resolution ? '✓ Resolved' : '✕ Rejected'}: {item.marker}
+        <div style={{ fontSize: '0.8rem', fontWeight: 600, color: '#15803d' }}>
+          ✓ Resolved: {item.description}
         </div>
         {item.resolution && (
           <p style={{ margin: '2px 0 0', fontSize: '0.8rem', color: '#4b5563' }}>{item.resolution}</p>
@@ -67,23 +64,18 @@ function ClarificationCard({
         tabIndex={0}
         onKeyDown={(e) => e.key === 'Enter' && setExpanded((v) => !v)}
       >
-        <span style={{ fontSize: '0.85rem', fontWeight: 600, flex: 1 }}>⚠ {item.marker}</span>
+        <span style={{ fontSize: '0.85rem', fontWeight: 600, flex: 1 }}>⚠ {item.description}</span>
         <span style={{ color: '#9ca3af', fontSize: '0.75rem' }}>{expanded ? '▲' : '▼'}</span>
       </div>
 
       {expanded && (
         <>
-          {item.suggestion && (
-            <p style={{ margin: '0 0 8px', fontSize: '0.85rem', color: '#6b7280' }}>
-              💡 Suggestion: <em>{item.suggestion}</em>
-            </p>
-          )}
           <div style={{ marginBottom: 6 }}>
             <label style={labelStyle}>Resolution text</label>
             <textarea
               value={resolution}
               onChange={(e) => setResolution(e.target.value)}
-              placeholder="Type your resolution or accept the AI suggestion above…"
+              placeholder="Type your resolution…"
               rows={2}
               style={{ ...textareaStyle, width: '100%' }}
             />
@@ -94,13 +86,7 @@ function ClarificationCard({
               disabled={!resolution.trim()}
               style={{ ...btnStyle, background: '#059669', padding: '6px 14px', fontSize: '0.85rem' }}
             >
-              ✓ Accept
-            </button>
-            <button
-              onClick={() => onReject(item.id)}
-              style={{ ...btnStyle, background: '#6b7280', padding: '6px 14px', fontSize: '0.85rem' }}
-            >
-              ✕ Reject
+              ✓ Resolve
             </button>
           </div>
         </>
@@ -116,8 +102,7 @@ export function ClarificationPanel() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showAdd, setShowAdd] = useState(false);
-  const [newMarker, setNewMarker] = useState('');
-  const [newSuggestion, setNewSuggestion] = useState('');
+  const [newDescription, setNewDescription] = useState('');
   const [addLoading, setAddLoading] = useState(false);
 
   async function handleLoad() {
@@ -138,17 +123,7 @@ export function ClarificationPanel() {
   async function handleResolve(itemId: string, resolution: string) {
     if (!spec) return;
     try {
-      const updated = await resolveClarification(projectId.trim(), spec.id, itemId, resolution);
-      setSpec(updated);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Unknown error');
-    }
-  }
-
-  async function handleReject(itemId: string) {
-    if (!spec) return;
-    try {
-      const updated = await rejectClarification(projectId.trim(), spec.id, itemId);
+      const updated = await resolveClarification(projectId.trim(), spec.spec_id, itemId, resolution);
       setSpec(updated);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Unknown error');
@@ -156,14 +131,12 @@ export function ClarificationPanel() {
   }
 
   async function handleAdd() {
-    if (!spec || !newMarker.trim()) return;
+    if (!spec || !newDescription.trim()) return;
     setAddLoading(true);
     try {
-      await addClarification(projectId.trim(), spec.id, newMarker.trim(), newSuggestion.trim());
-      const updated = await getSpec(projectId.trim(), spec.id);
+      const updated = await addClarification(projectId.trim(), spec.spec_id, newDescription.trim());
       setSpec(updated);
-      setNewMarker('');
-      setNewSuggestion('');
+      setNewDescription('');
       setShowAdd(false);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Unknown error');
@@ -172,14 +145,14 @@ export function ClarificationPanel() {
     }
   }
 
-  const pending = spec?.clarification_items.filter((c) => !c.resolved) ?? [];
-  const resolved = spec?.clarification_items.filter((c) => c.resolved) ?? [];
+  const pending = spec?.clarifications.filter((c) => c.status === 'open') ?? [];
+  const resolved = spec?.clarifications.filter((c) => c.status === 'resolved') ?? [];
 
   return (
     <div>
       <h2 style={{ marginTop: 0 }}>Clarification Panel</h2>
       <p style={{ color: '#6b7280', fontSize: '0.9rem' }}>
-        Review ambiguities and under-specified areas in your spec. Accept or reject each item to
+        Review ambiguities and under-specified areas in your spec. Resolve each item to
         track resolution status.
       </p>
 
@@ -193,7 +166,7 @@ export function ClarificationPanel() {
         />
         <input
           type="text"
-          placeholder="Spec ID (UUID)"
+          placeholder="Spec ID"
           value={specId}
           onChange={(e) => setSpecId(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && handleLoad()}
@@ -221,7 +194,7 @@ export function ClarificationPanel() {
             }}
           >
             <div>
-              <strong>{spec.feature_name}</strong>
+              <strong>{spec.title}</strong>
               <span style={{ color: '#6b7280', fontSize: '0.85rem', marginLeft: 8 }}>
                 {pending.length} pending · {resolved.length} resolved
               </span>
@@ -242,30 +215,20 @@ export function ClarificationPanel() {
               }}
             >
               <h4 style={{ margin: '0 0 10px' }}>New Clarification Item</h4>
-              <div style={{ marginBottom: 8 }}>
-                <label style={labelStyle}>Marker / Question *</label>
+              <div style={{ marginBottom: 10 }}>
+                <label style={labelStyle}>Description *</label>
                 <input
                   type="text"
-                  value={newMarker}
-                  onChange={(e) => setNewMarker(e.target.value)}
-                  placeholder="e.g. [NEEDS CLARIFICATION] What happens when login fails?"
+                  value={newDescription}
+                  onChange={(e) => setNewDescription(e.target.value)}
+                  placeholder="e.g. What happens when login fails?"
                   style={{ ...inputStyle, width: '100%' }}
-                />
-              </div>
-              <div style={{ marginBottom: 10 }}>
-                <label style={labelStyle}>AI Suggestion (optional)</label>
-                <textarea
-                  value={newSuggestion}
-                  onChange={(e) => setNewSuggestion(e.target.value)}
-                  placeholder="A suggested resolution for this ambiguity…"
-                  rows={2}
-                  style={{ ...textareaStyle, width: '100%' }}
                 />
               </div>
               <div style={{ display: 'flex', gap: 8 }}>
                 <button
                   onClick={handleAdd}
-                  disabled={addLoading || !newMarker.trim()}
+                  disabled={addLoading || !newDescription.trim()}
                   style={{ ...btnStyle, background: '#0369a1', padding: '6px 14px', fontSize: '0.85rem' }}
                 >
                   {addLoading ? 'Adding…' : 'Add Item'}
@@ -280,7 +243,7 @@ export function ClarificationPanel() {
             </div>
           )}
 
-          {spec.clarification_items.length === 0 && (
+          {spec.clarifications.length === 0 && (
             <p style={{ color: '#6b7280' }}>
               No clarification items. Use the button above to add items manually, or they will be
               detected automatically during AI spec generation.
@@ -297,7 +260,6 @@ export function ClarificationPanel() {
                   key={c.id}
                   item={c}
                   onResolve={handleResolve}
-                  onReject={handleReject}
                 />
               ))}
             </div>
@@ -313,7 +275,6 @@ export function ClarificationPanel() {
                   key={c.id}
                   item={c}
                   onResolve={handleResolve}
-                  onReject={handleReject}
                 />
               ))}
             </div>
