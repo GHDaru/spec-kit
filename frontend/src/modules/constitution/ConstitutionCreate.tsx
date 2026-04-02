@@ -6,7 +6,7 @@ import {
   type EnforcementLevel,
   type PrincipleCategory,
 } from '../../api/constitution';
-import { btnStyle, errorStyle, inputStyle } from './ConstitutionView';
+import { btnStyle, errorStyle, inputStyle } from './styles';
 
 const ENFORCEMENT_LEVELS: EnforcementLevel[] = ['MUST', 'SHOULD', 'MAY'];
 const CATEGORIES: PrincipleCategory[] = [
