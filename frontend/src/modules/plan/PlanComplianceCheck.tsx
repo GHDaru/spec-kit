@@ -48,9 +48,9 @@ export function PlanComplianceCheck({ compliance }: Props) {
             Violations
           </h4>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {compliance.violations.map((v, i) => (
+            {compliance.violations.map((v) => (
               <div
-                key={i}
+                key={`${v.principle}-${v.message}`}
                 style={{
                   display: 'flex',
                   gap: 10,

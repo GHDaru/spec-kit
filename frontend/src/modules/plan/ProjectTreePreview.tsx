@@ -1,8 +1,16 @@
 import { useState } from 'react';
 import type { FileNode } from '../../api/plan';
 
-function TreeNode({ node, depth }: { node: FileNode; depth: number }) {
-  const [open, setOpen] = useState(depth < 2);
+function TreeNode({
+  node,
+  depth,
+  defaultOpen,
+}: {
+  node: FileNode;
+  depth: number;
+  defaultOpen: boolean;
+}) {
+  const [open, setOpen] = useState(defaultOpen);
   const isDir = node.type === 'directory';
   const indent = depth * 18;
 
@@ -62,7 +70,7 @@ function TreeNode({ node, depth }: { node: FileNode; depth: number }) {
           }}
         >
           {node.children.map((child) => (
-            <TreeNode key={child.name} node={child} depth={depth + 1} />
+            <TreeNode key={child.name} node={child} depth={depth + 1} defaultOpen={defaultOpen} />
           ))}
         </div>
       )}
@@ -87,6 +95,12 @@ interface Props {
 
 export function ProjectTreePreview({ root }: Props) {
   const [expandAll, setExpandAll] = useState(false);
+  const [resetKey, setResetKey] = useState(0);
+
+  function toggleExpandAll() {
+    setExpandAll((v) => !v);
+    setResetKey((k) => k + 1);
+  }
 
   return (
     <div>
@@ -94,7 +108,7 @@ export function ProjectTreePreview({ root }: Props) {
         <h3 style={{ margin: 0 }}>Project Structure</h3>
         <button
           type="button"
-          onClick={() => setExpandAll((v) => !v)}
+          onClick={toggleExpandAll}
           style={{
             background: 'none',
             border: '1px solid #d1d5db',
@@ -113,7 +127,6 @@ export function ProjectTreePreview({ root }: Props) {
       </p>
 
       <div
-        key={String(expandAll)}
         style={{
           background: '#f8fafc',
           border: '1px solid #e2e8f0',
@@ -122,7 +135,7 @@ export function ProjectTreePreview({ root }: Props) {
           overflowX: 'auto',
         }}
       >
-        <TreeNode node={root} depth={0} />
+        <TreeNode key={resetKey} node={root} depth={0} defaultOpen={expandAll} />
       </div>
     </div>
   );

@@ -155,8 +155,8 @@ export function ERDiagram({ dataModel }: Props) {
             Relationships
           </h4>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-            {dataModel.relationships.map((r, i) => (
-              <RelationshipRow key={i} rel={r} />
+            {dataModel.relationships.map((r) => (
+              <RelationshipRow key={`${r.from_entity}-${r.to_entity}-${r.cardinality}`} rel={r} />
             ))}
           </div>
         </div>
