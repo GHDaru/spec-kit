@@ -2,14 +2,15 @@
 
 Endpoints
 ---------
-GET    /api/v1/projects/{project_id}/specs
-POST   /api/v1/projects/{project_id}/specs
-GET    /api/v1/projects/{project_id}/specs/{spec_id}
-PUT    /api/v1/projects/{project_id}/specs/{spec_id}
-DELETE /api/v1/projects/{project_id}/specs/{spec_id}
-POST   /api/v1/projects/{project_id}/specs/{spec_id}/clarifications
-PATCH  /api/v1/projects/{project_id}/specs/{spec_id}/clarifications/{item_id}/resolve
-PATCH  /api/v1/projects/{project_id}/specs/{spec_id}/clarifications/{item_id}/reject
+GET  /api/v1/projects/{project_id}/specs
+POST /api/v1/projects/{project_id}/specs/{spec_id}
+GET  /api/v1/projects/{project_id}/specs/{spec_id}
+POST /api/v1/projects/{project_id}/specs/{spec_id}/stories
+PATCH /api/v1/projects/{project_id}/specs/{spec_id}/stories/{story_id}
+DELETE /api/v1/projects/{project_id}/specs/{spec_id}/stories/{story_id}
+POST /api/v1/projects/{project_id}/specs/{spec_id}/requirements
+POST /api/v1/projects/{project_id}/specs/{spec_id}/clarifications
+POST /api/v1/projects/{project_id}/specs/{spec_id}/clarifications/{item_id}/resolve
 """
 
 from pathlib import Path
@@ -20,95 +21,116 @@ from specify_cli.spec import (
     AcceptanceScenario,
     ClarificationItem,
     FunctionalRequirement,
+    Priority,
     Spec,
     UserStory,
 )
 from specforge_api.config import Settings, settings as default_settings
 from specforge_api.schemas.spec import (
+    AcceptanceScenarioSchema,
     AddClarificationRequest,
+    AddRequirementRequest,
+    AddUserStoryRequest,
     ClarificationItemSchema,
+    CreateSpecRequest,
     FunctionalRequirementSchema,
     ResolveClarificationRequest,
-    SpecCreateRequest,
+    SpecListResponse,
     SpecResponse,
-    SpecSummaryResponse,
-    SpecUpdateRequest,
+    SpecSummary,
+    UpdateStoryPriorityRequest,
     UserStorySchema,
-    AcceptanceScenarioSchema,
 )
 
 router = APIRouter()
 
 
 def _get_settings() -> Settings:
+    """Dependency that returns the application settings."""
     return default_settings
 
 
+def _spec_path(project_id: str, spec_id: str, projects_root: Path) -> Path:
+    """Resolve the path to a spec's Markdown file."""
+    return projects_root / project_id / "specs" / spec_id / "spec.md"
+
+
 def _specs_dir(project_id: str, projects_root: Path) -> Path:
+    """Resolve the specs directory for a project."""
     return projects_root / project_id / "specs"
 
 
-def _spec_path(project_id: str, spec_id: str, projects_root: Path) -> Path:
-    return _specs_dir(project_id, projects_root) / f"{spec_id}.json"
+# ---------------------------------------------------------------------------
+# Conversion helpers
+# ---------------------------------------------------------------------------
 
 
-def _to_user_story_schema(story: UserStory) -> UserStorySchema:
+def _scenario_to_schema(scenario: AcceptanceScenario) -> AcceptanceScenarioSchema:
+    return AcceptanceScenarioSchema(
+        title=scenario.title,
+        given=scenario.given,
+        when=scenario.when,
+        then=scenario.then,
+    )
+
+
+def _story_to_schema(story: UserStory) -> UserStorySchema:
     return UserStorySchema(
         id=story.id,
         title=story.title,
-        description=story.description,
-        priority=story.priority,
-        acceptance_scenarios=[
-            AcceptanceScenarioSchema(id=s.id, given=s.given, when=s.when, then=s.then)
-            for s in story.acceptance_scenarios
-        ],
+        as_a=story.as_a,
+        i_want=story.i_want,
+        so_that=story.so_that,
+        priority=story.priority.value,
+        scenarios=[_scenario_to_schema(s) for s in story.scenarios],
+    )
+
+
+def _req_to_schema(req: FunctionalRequirement) -> FunctionalRequirementSchema:
+    return FunctionalRequirementSchema(
+        id=req.id,
+        description=req.description,
+        story_id=req.story_id,
+    )
+
+
+def _cl_to_schema(item: ClarificationItem) -> ClarificationItemSchema:
+    return ClarificationItemSchema(
+        id=item.id,
+        description=item.description,
+        status=item.status.value,
+        resolution=item.resolution,
     )
 
 
 def _to_response(spec: Spec) -> SpecResponse:
+    """Convert a domain Spec to a SpecResponse schema."""
     return SpecResponse(
-        id=spec.id,
-        feature_name=spec.feature_name,
+        spec_id=spec.spec_id,
+        title=spec.title,
         description=spec.description,
         version=spec.version,
-        user_stories=[_to_user_story_schema(s) for s in spec.user_stories],
-        functional_requirements=[
-            FunctionalRequirementSchema(
-                id=r.id,
-                description=r.description,
-                story_id=r.story_id,
-            )
-            for r in spec.functional_requirements
-        ],
-        clarification_items=[
-            ClarificationItemSchema(
-                id=c.id,
-                marker=c.marker,
-                suggestion=c.suggestion,
-                resolved=c.resolved,
-                resolution=c.resolution,
-            )
-            for c in spec.clarification_items
-        ],
-        created_at=spec.created_at,
-        updated_at=spec.updated_at,
+        created_date=spec.created_date.isoformat() if spec.created_date else None,
+        user_stories=[_story_to_schema(s) for s in spec.user_stories],
+        requirements=[_req_to_schema(r) for r in spec.requirements],
+        clarifications=[_cl_to_schema(c) for c in spec.clarifications],
     )
 
 
-def _to_summary(spec: Spec) -> SpecSummaryResponse:
-    return SpecSummaryResponse(
-        id=spec.id,
-        feature_name=spec.feature_name,
-        description=spec.description,
+def _to_summary(spec: Spec) -> SpecSummary:
+    return SpecSummary(
+        spec_id=spec.spec_id,
+        title=spec.title,
         version=spec.version,
-        created_at=spec.created_at,
-        updated_at=spec.updated_at,
+        created_date=spec.created_date.isoformat() if spec.created_date else None,
         story_count=len(spec.user_stories),
-        requirement_count=len(spec.functional_requirements),
+        requirement_count=len(spec.requirements),
+        open_clarification_count=len(spec.open_clarifications()),
     )
 
 
 def _load_spec_or_404(project_id: str, spec_id: str, projects_root: Path) -> Spec:
+    """Load a spec from disk or raise 404."""
     path = _spec_path(project_id, spec_id, projects_root)
     try:
         return Spec.load(path)
@@ -119,194 +141,208 @@ def _load_spec_or_404(project_id: str, spec_id: str, projects_root: Path) -> Spe
         )
 
 
-def _build_spec_from_request(body: SpecCreateRequest) -> Spec:
-    spec = Spec.create(
-        feature_name=body.feature_name,
-        description=body.description,
-        version=body.version,
-    )
-    for us_req in body.user_stories:
-        story = UserStory.create(
-            title=us_req.title,
-            description=us_req.description,
-            priority=us_req.priority,
-        )
-        for sc_req in us_req.acceptance_scenarios:
-            story.add_scenario(
-                given=sc_req.given,
-                when=sc_req.when,
-                then=sc_req.then,
-            )
-        spec.user_stories.append(story)
-    for i, fr_req in enumerate(body.functional_requirements, start=1):
-        req = FunctionalRequirement.create(
-            number=i,
-            description=fr_req.description,
-            story_id=fr_req.story_id,
-        )
-        spec.functional_requirements.append(req)
-    return spec
+# ---------------------------------------------------------------------------
+# Endpoints
+# ---------------------------------------------------------------------------
 
-
-# ──────────────────────────────────────────────────────────────────────────────
-# List specs
-# ──────────────────────────────────────────────────────────────────────────────
 
 @router.get(
     "/projects/{project_id}/specs",
-    response_model=list[SpecSummaryResponse],
+    response_model=SpecListResponse,
     summary="List all specs for a project",
 )
 def list_specs(
     project_id: str,
     cfg: Settings = Depends(_get_settings),
-) -> list[SpecSummaryResponse]:
+) -> SpecListResponse:
+    """Return summary information for every spec in *project_id*."""
     specs_dir = _specs_dir(project_id, cfg.projects_root)
-    if not specs_dir.exists():
-        return []
-    summaries = []
-    for spec_file in sorted(specs_dir.glob("*.json")):
-        try:
-            spec = Spec.load(spec_file)
-            summaries.append(_to_summary(spec))
-        except Exception:
-            continue
-    return summaries
+    summaries: list[SpecSummary] = []
+    if specs_dir.exists():
+        for spec_file in sorted(specs_dir.glob("*/spec.md")):
+            try:
+                spec = Spec.load(spec_file)
+                summaries.append(_to_summary(spec))
+            except Exception:
+                continue  # Skip malformed files
+    return SpecListResponse(project_id=project_id, specs=summaries)
 
-
-# ──────────────────────────────────────────────────────────────────────────────
-# Create spec
-# ──────────────────────────────────────────────────────────────────────────────
 
 @router.post(
-    "/projects/{project_id}/specs",
+    "/projects/{project_id}/specs/{spec_id}",
     response_model=SpecResponse,
     status_code=status.HTTP_201_CREATED,
-    summary="Create a new spec",
+    summary="Create a spec",
 )
 def create_spec(
     project_id: str,
-    body: SpecCreateRequest,
+    spec_id: str,
+    body: CreateSpecRequest,
     cfg: Settings = Depends(_get_settings),
 ) -> SpecResponse:
-    try:
-        spec = _build_spec_from_request(body)
-    except ValueError as exc:
-        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(exc))
-    path = _spec_path(project_id, spec.id, cfg.projects_root)
+    """Create and persist a new spec for *project_id*."""
+    from datetime import date
+
+    spec = Spec(
+        spec_id=spec_id,
+        title=body.title,
+        description=body.description,
+        created_date=date.today(),
+    )
+
+    for story_req in body.user_stories:
+        story = UserStory(
+            id=story_req.id or spec.next_story_id(),
+            title=story_req.title,
+            as_a=story_req.as_a,
+            i_want=story_req.i_want,
+            so_that=story_req.so_that,
+            priority=story_req.priority,
+        )
+        for sc in story_req.scenarios:
+            story.add_scenario(AcceptanceScenario(
+                title=sc.title,
+                given=sc.given,
+                when=sc.when,
+                then=sc.then,
+            ))
+        spec.add_story(story)
+
+    for req_req in body.requirements:
+        spec.add_requirement(req_req.description, story_id=req_req.story_id)
+
+    for cl_req in body.clarifications:
+        spec.add_clarification(cl_req.description)
+
+    path = _spec_path(project_id, spec_id, cfg.projects_root)
     spec.save(path)
     return _to_response(spec)
 
 
-# ──────────────────────────────────────────────────────────────────────────────
-# Get spec
-# ──────────────────────────────────────────────────────────────────────────────
-
 @router.get(
     "/projects/{project_id}/specs/{spec_id}",
     response_model=SpecResponse,
-    summary="Get a specific spec",
+    summary="Get a spec",
 )
 def get_spec(
     project_id: str,
     spec_id: str,
     cfg: Settings = Depends(_get_settings),
 ) -> SpecResponse:
+    """Return the spec identified by *spec_id* within *project_id*, or 404."""
     spec = _load_spec_or_404(project_id, spec_id, cfg.projects_root)
     return _to_response(spec)
 
 
-# ──────────────────────────────────────────────────────────────────────────────
-# Update spec
-# ──────────────────────────────────────────────────────────────────────────────
-
-@router.put(
-    "/projects/{project_id}/specs/{spec_id}",
+@router.post(
+    "/projects/{project_id}/specs/{spec_id}/stories",
     response_model=SpecResponse,
-    summary="Update a spec (full replacement of metadata + stories + requirements)",
+    status_code=status.HTTP_201_CREATED,
+    summary="Add a user story to a spec",
 )
-def update_spec(
+def add_story(
     project_id: str,
     spec_id: str,
-    body: SpecUpdateRequest,
+    body: AddUserStoryRequest,
     cfg: Settings = Depends(_get_settings),
 ) -> SpecResponse:
+    """Append a new user story to the spec and persist."""
     spec = _load_spec_or_404(project_id, spec_id, cfg.projects_root)
-
-    if body.feature_name is not None:
-        spec.feature_name = body.feature_name
-    if body.description is not None:
-        spec.description = body.description
-    if body.version is not None:
-        spec.version = body.version
-
-    if body.user_stories is not None:
-        new_stories = []
-        for us_req in body.user_stories:
-            try:
-                story = UserStory.create(
-                    title=us_req.title,
-                    description=us_req.description,
-                    priority=us_req.priority,
-                )
-            except ValueError as exc:
-                raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(exc))
-            for sc_req in us_req.acceptance_scenarios:
-                story.add_scenario(
-                    given=sc_req.given,
-                    when=sc_req.when,
-                    then=sc_req.then,
-                )
-            new_stories.append(story)
-        spec.user_stories = new_stories
-
-    if body.functional_requirements is not None:
-        new_reqs = []
-        for i, fr_req in enumerate(body.functional_requirements, start=1):
-            req = FunctionalRequirement.create(
-                number=i,
-                description=fr_req.description,
-                story_id=fr_req.story_id,
-            )
-            new_reqs.append(req)
-        spec.functional_requirements = new_reqs
-
-    spec._touch()
-    path = _spec_path(project_id, spec_id, cfg.projects_root)
-    spec.save(path)
+    story = UserStory(
+        id=body.id or spec.next_story_id(),
+        title=body.title,
+        as_a=body.as_a,
+        i_want=body.i_want,
+        so_that=body.so_that,
+        priority=body.priority,
+    )
+    for sc in body.scenarios:
+        story.add_scenario(AcceptanceScenario(
+            title=sc.title,
+            given=sc.given,
+            when=sc.when,
+            then=sc.then,
+        ))
+    spec.add_story(story)
+    spec.save(_spec_path(project_id, spec_id, cfg.projects_root))
     return _to_response(spec)
 
 
-# ──────────────────────────────────────────────────────────────────────────────
-# Delete spec
-# ──────────────────────────────────────────────────────────────────────────────
-
-@router.delete(
-    "/projects/{project_id}/specs/{spec_id}",
-    status_code=status.HTTP_204_NO_CONTENT,
-    summary="Delete a spec",
+@router.patch(
+    "/projects/{project_id}/specs/{spec_id}/stories/{story_id}",
+    response_model=SpecResponse,
+    summary="Update a user story's priority",
 )
-def delete_spec(
+def update_story_priority(
     project_id: str,
     spec_id: str,
+    story_id: str,
+    body: UpdateStoryPriorityRequest,
     cfg: Settings = Depends(_get_settings),
-) -> None:
-    path = _spec_path(project_id, spec_id, cfg.projects_root)
-    if not path.exists():
+) -> SpecResponse:
+    """Update the priority of an existing user story and persist."""
+    spec = _load_spec_or_404(project_id, spec_id, cfg.projects_root)
+    story = spec.get_story(story_id)
+    if story is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Spec '{spec_id}' not found for project '{project_id}'",
+            detail=f"Story '{story_id}' not found in spec '{spec_id}'",
         )
-    path.unlink()
+    try:
+        story.priority = Priority(body.priority.upper())
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            detail=f"Invalid priority '{body.priority}'. Must be P1, P2, or P3.",
+        )
+    spec.save(_spec_path(project_id, spec_id, cfg.projects_root))
+    return _to_response(spec)
 
 
-# ──────────────────────────────────────────────────────────────────────────────
-# Clarification endpoints
-# ──────────────────────────────────────────────────────────────────────────────
+@router.delete(
+    "/projects/{project_id}/specs/{spec_id}/stories/{story_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Remove a user story from a spec",
+)
+def remove_story(
+    project_id: str,
+    spec_id: str,
+    story_id: str,
+    cfg: Settings = Depends(_get_settings),
+) -> None:
+    """Remove a user story by ID from the spec and persist."""
+    spec = _load_spec_or_404(project_id, spec_id, cfg.projects_root)
+    removed = spec.remove_story(story_id)
+    if not removed:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Story '{story_id}' not found in spec '{spec_id}'",
+        )
+    spec.save(_spec_path(project_id, spec_id, cfg.projects_root))
+
+
+@router.post(
+    "/projects/{project_id}/specs/{spec_id}/requirements",
+    response_model=SpecResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Add a functional requirement to a spec",
+)
+def add_requirement(
+    project_id: str,
+    spec_id: str,
+    body: AddRequirementRequest,
+    cfg: Settings = Depends(_get_settings),
+) -> SpecResponse:
+    """Append a new functional requirement to the spec and persist."""
+    spec = _load_spec_or_404(project_id, spec_id, cfg.projects_root)
+    spec.add_requirement(body.description, story_id=body.story_id)
+    spec.save(_spec_path(project_id, spec_id, cfg.projects_root))
+    return _to_response(spec)
+
 
 @router.post(
     "/projects/{project_id}/specs/{spec_id}/clarifications",
-    response_model=ClarificationItemSchema,
+    response_model=SpecResponse,
     status_code=status.HTTP_201_CREATED,
     summary="Add a clarification item to a spec",
 )
@@ -315,21 +351,15 @@ def add_clarification(
     spec_id: str,
     body: AddClarificationRequest,
     cfg: Settings = Depends(_get_settings),
-) -> ClarificationItemSchema:
+) -> SpecResponse:
+    """Append a new open clarification item to the spec and persist."""
     spec = _load_spec_or_404(project_id, spec_id, cfg.projects_root)
-    item = spec.add_clarification(marker=body.marker, suggestion=body.suggestion)
-    path = _spec_path(project_id, spec_id, cfg.projects_root)
-    spec.save(path)
-    return ClarificationItemSchema(
-        id=item.id,
-        marker=item.marker,
-        suggestion=item.suggestion,
-        resolved=item.resolved,
-        resolution=item.resolution,
-    )
+    spec.add_clarification(body.description)
+    spec.save(_spec_path(project_id, spec_id, cfg.projects_root))
+    return _to_response(spec)
 
 
-@router.patch(
+@router.post(
     "/projects/{project_id}/specs/{spec_id}/clarifications/{item_id}/resolve",
     response_model=SpecResponse,
     summary="Resolve a clarification item",
@@ -341,26 +371,13 @@ def resolve_clarification(
     body: ResolveClarificationRequest,
     cfg: Settings = Depends(_get_settings),
 ) -> SpecResponse:
+    """Mark a clarification item as resolved with the provided resolution text."""
     spec = _load_spec_or_404(project_id, spec_id, cfg.projects_root)
-    spec.resolve_clarification(item_id, body.resolution)
-    path = _spec_path(project_id, spec_id, cfg.projects_root)
-    spec.save(path)
-    return _to_response(spec)
-
-
-@router.patch(
-    "/projects/{project_id}/specs/{spec_id}/clarifications/{item_id}/reject",
-    response_model=SpecResponse,
-    summary="Reject a clarification item",
-)
-def reject_clarification(
-    project_id: str,
-    spec_id: str,
-    item_id: str,
-    cfg: Settings = Depends(_get_settings),
-) -> SpecResponse:
-    spec = _load_spec_or_404(project_id, spec_id, cfg.projects_root)
-    spec.reject_clarification(item_id)
-    path = _spec_path(project_id, spec_id, cfg.projects_root)
-    spec.save(path)
+    resolved = spec.resolve_clarification(item_id, body.resolution)
+    if not resolved:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Clarification '{item_id}' not found in spec '{spec_id}'",
+        )
+    spec.save(_spec_path(project_id, spec_id, cfg.projects_root))
     return _to_response(spec)

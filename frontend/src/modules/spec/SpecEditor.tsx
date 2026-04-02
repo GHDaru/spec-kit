@@ -3,9 +3,9 @@ import { useState } from 'react';
 import {
   createSpec,
   type Priority,
-  type UserStoryCreateRequest,
+  type AddUserStoryRequest,
   type AcceptanceScenarioCreateRequest,
-  type FunctionalRequirementCreateRequest,
+  type AddRequirementRequest,
   type SpecResponse,
 } from '../../api/spec';
 import {
@@ -22,34 +22,43 @@ import {
 const PRIORITIES: Priority[] = ['P1', 'P2', 'P3'];
 
 const emptyScenario = (): AcceptanceScenarioCreateRequest => ({
+  title: '',
   given: '',
   when: '',
   then: '',
 });
 
-const emptyStory = (): UserStoryCreateRequest => ({
+const emptyStory = (): AddUserStoryRequest => ({
   title: '',
-  description: '',
+  as_a: '',
+  i_want: '',
+  so_that: '',
   priority: 'P1',
-  acceptance_scenarios: [],
+  scenarios: [],
 });
 
-const emptyReq = (): FunctionalRequirementCreateRequest => ({
+const emptyReq = (): AddRequirementRequest => ({
   description: '',
   story_id: null,
 });
 
+function slugify(text: string): string {
+  return text
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '')
+    || `untitled-spec-${Date.now()}`;
+}
+
 function buildMarkdownPreview(
-  featureName: string,
+  title: string,
   description: string,
-  version: string,
-  stories: UserStoryCreateRequest[],
-  requirements: FunctionalRequirementCreateRequest[],
+  stories: AddUserStoryRequest[],
+  requirements: AddRequirementRequest[],
 ): string {
   const lines: string[] = [];
-  lines.push(`# ${featureName || 'Untitled Feature'}`);
-  lines.push('');
-  lines.push(`**Version**: ${version || '1.0.0'}`);
+  lines.push(`# ${title || 'Untitled Feature'}`);
   lines.push('');
   if (description) {
     lines.push('## Description');
@@ -64,13 +73,16 @@ function buildMarkdownPreview(
     for (const [i, s] of stories.entries()) {
       lines.push(`### US-${String(i + 1).padStart(3, '0')} [${s.priority}] — ${s.title || 'Untitled'}`);
       lines.push('');
-      if (s.description) lines.push(s.description);
-      lines.push('');
-      if (s.acceptance_scenarios.length > 0) {
+      if (s.as_a || s.i_want || s.so_that) {
+        lines.push(`As a ${s.as_a}, I want ${s.i_want}, so that ${s.so_that}`);
+        lines.push('');
+      }
+      if (s.scenarios.length > 0) {
         lines.push('**Acceptance Scenarios:**');
         lines.push('');
-        for (const sc of s.acceptance_scenarios) {
+        for (const sc of s.scenarios) {
           if (sc.given || sc.when || sc.then) {
+            if (sc.title) lines.push(`*${sc.title}*`);
             lines.push(`- **Given** ${sc.given}`);
             lines.push(`  **When** ${sc.when}`);
             lines.push(`  **Then** ${sc.then}`);
@@ -102,20 +114,20 @@ export function SpecEditor({
   onCreated?: (spec: SpecResponse) => void;
 }) {
   const [projectId, setProjectId] = useState(initialProjectId ?? '');
-  const [featureName, setFeatureName] = useState('');
+  const [specId, setSpecId] = useState('');
+  const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [version, setVersion] = useState('1.0.0');
-  const [stories, setStories] = useState<UserStoryCreateRequest[]>([emptyStory()]);
-  const [requirements, setRequirements] = useState<FunctionalRequirementCreateRequest[]>([emptyReq()]);
+  const [stories, setStories] = useState<AddUserStoryRequest[]>([emptyStory()]);
+  const [requirements, setRequirements] = useState<AddRequirementRequest[]>([emptyReq()]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [created, setCreated] = useState<SpecResponse | null>(null);
 
-  const preview = buildMarkdownPreview(featureName, description, version, stories, requirements);
+  const preview = buildMarkdownPreview(title, description, stories, requirements);
 
   // ── Story helpers ─────────────────────────────────────────────────────────
 
-  function updateStory(idx: number, field: keyof UserStoryCreateRequest, value: string | AcceptanceScenarioCreateRequest[]) {
+  function updateStory(idx: number, field: keyof AddUserStoryRequest, value: string | AcceptanceScenarioCreateRequest[]) {
     setStories((prev) =>
       prev.map((s, i) => (i === idx ? { ...s, [field]: value } : s)),
     );
@@ -133,7 +145,7 @@ export function SpecEditor({
     setStories((prev) =>
       prev.map((s, i) =>
         i === storyIdx
-          ? { ...s, acceptance_scenarios: [...s.acceptance_scenarios, emptyScenario()] }
+          ? { ...s, scenarios: [...s.scenarios, emptyScenario()] }
           : s,
       ),
     );
@@ -150,7 +162,7 @@ export function SpecEditor({
         i === storyIdx
           ? {
               ...s,
-              acceptance_scenarios: s.acceptance_scenarios.map((sc, j) =>
+              scenarios: s.scenarios.map((sc, j) =>
                 j === scIdx ? { ...sc, [field]: value } : sc,
               ),
             }
@@ -163,7 +175,7 @@ export function SpecEditor({
     setStories((prev) =>
       prev.map((s, i) =>
         i === storyIdx
-          ? { ...s, acceptance_scenarios: s.acceptance_scenarios.filter((_, j) => j !== scIdx) }
+          ? { ...s, scenarios: s.scenarios.filter((_, j) => j !== scIdx) }
           : s,
       ),
     );
@@ -171,7 +183,7 @@ export function SpecEditor({
 
   // ── Requirement helpers ───────────────────────────────────────────────────
 
-  function updateReq(idx: number, field: keyof FunctionalRequirementCreateRequest, value: string | null) {
+  function updateReq(idx: number, field: keyof AddRequirementRequest, value: string | null) {
     setRequirements((prev) =>
       prev.map((r, i) => (i === idx ? { ...r, [field]: value } : r)),
     );
@@ -189,17 +201,17 @@ export function SpecEditor({
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!projectId.trim() || !featureName.trim()) return;
+    if (!projectId.trim() || !title.trim()) return;
+    const resolvedSpecId = specId.trim() || slugify(title.trim());
     setLoading(true);
     setError(null);
     setCreated(null);
     try {
-      const result = await createSpec(projectId.trim(), {
-        feature_name: featureName.trim(),
+      const result = await createSpec(projectId.trim(), resolvedSpecId, {
+        title: title.trim(),
         description: description.trim(),
-        version: version.trim() || '1.0.0',
         user_stories: stories.filter((s) => s.title.trim()),
-        functional_requirements: requirements.filter((r) => r.description.trim()),
+        requirements: requirements.filter((r) => r.description.trim()),
       });
       setCreated(result);
       onCreated?.(result);
@@ -221,7 +233,7 @@ export function SpecEditor({
         {/* ── Left: Form ── */}
         <form onSubmit={handleSubmit} style={{ flex: 1, minWidth: 0 }}>
           {/* Project + meta */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 100px', gap: 10, marginBottom: 14 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10, marginBottom: 14 }}>
             <div>
               <label style={labelStyle}>Project ID *</label>
               <input
@@ -234,23 +246,23 @@ export function SpecEditor({
               />
             </div>
             <div>
-              <label style={labelStyle}>Feature Name *</label>
+              <label style={labelStyle}>Title *</label>
               <input
                 type="text"
                 placeholder="e.g. User Authentication"
-                value={featureName}
-                onChange={(e) => setFeatureName(e.target.value)}
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
                 required
                 style={{ ...inputStyle, width: '100%' }}
               />
             </div>
             <div>
-              <label style={labelStyle}>Version</label>
+              <label style={labelStyle}>Spec ID</label>
               <input
                 type="text"
-                placeholder="1.0.0"
-                value={version}
-                onChange={(e) => setVersion(e.target.value)}
+                placeholder={title ? slugify(title) : 'auto-generated'}
+                value={specId}
+                onChange={(e) => setSpecId(e.target.value)}
                 style={{ ...inputStyle, width: '100%' }}
               />
             </div>
@@ -288,7 +300,7 @@ export function SpecEditor({
                     type="text"
                     value={story.title}
                     onChange={(e) => updateStory(si, 'title', e.target.value)}
-                    placeholder="As a user, I want to…"
+                    placeholder="Short story title"
                     style={{ ...inputStyle, width: '100%' }}
                   />
                 </div>
@@ -327,15 +339,37 @@ export function SpecEditor({
                 </div>
               </div>
 
-              <div style={{ marginBottom: 8 }}>
-                <label style={labelStyle}>Description</label>
-                <textarea
-                  value={story.description}
-                  onChange={(e) => updateStory(si, 'description', e.target.value)}
-                  placeholder="So that I can achieve my goal…"
-                  rows={2}
-                  style={{ ...textareaStyle, width: '100%' }}
-                />
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, marginBottom: 8 }}>
+                <div>
+                  <label style={labelStyle}>As a…</label>
+                  <input
+                    type="text"
+                    value={story.as_a}
+                    onChange={(e) => updateStory(si, 'as_a', e.target.value)}
+                    placeholder="e.g. registered user"
+                    style={{ ...inputStyle, width: '100%' }}
+                  />
+                </div>
+                <div>
+                  <label style={labelStyle}>I want…</label>
+                  <input
+                    type="text"
+                    value={story.i_want}
+                    onChange={(e) => updateStory(si, 'i_want', e.target.value)}
+                    placeholder="e.g. to reset my password"
+                    style={{ ...inputStyle, width: '100%' }}
+                  />
+                </div>
+                <div>
+                  <label style={labelStyle}>So that…</label>
+                  <input
+                    type="text"
+                    value={story.so_that}
+                    onChange={(e) => updateStory(si, 'so_that', e.target.value)}
+                    placeholder="e.g. I can regain access"
+                    style={{ ...inputStyle, width: '100%' }}
+                  />
+                </div>
               </div>
 
               {/* Acceptance Scenarios */}
@@ -343,7 +377,7 @@ export function SpecEditor({
                 <label style={{ ...labelStyle, color: '#7c3aed' }}>
                   Acceptance Scenarios
                 </label>
-                {story.acceptance_scenarios.map((sc, sci) => (
+                {story.scenarios.map((sc, sci) => (
                   <div
                     key={sci}
                     style={{
@@ -355,6 +389,25 @@ export function SpecEditor({
                       position: 'relative',
                     }}
                   >
+                    <div style={{ display: 'flex', gap: 8, marginBottom: 4, alignItems: 'center' }}>
+                      <span
+                        style={{
+                          minWidth: 44,
+                          fontSize: '0.75rem',
+                          fontWeight: 700,
+                          color: '#6b7280',
+                        }}
+                      >
+                        Title
+                      </span>
+                      <input
+                        type="text"
+                        value={sc.title}
+                        onChange={(e) => updateScenario(si, sci, 'title', e.target.value)}
+                        placeholder="Short scenario label"
+                        style={{ ...inputStyle, flex: 1, padding: '5px 10px', fontSize: '0.85rem' }}
+                      />
+                    </div>
                     {(['given', 'when', 'then'] as const).map((field) => (
                       <div key={field} style={{ display: 'flex', gap: 8, marginBottom: 4, alignItems: 'center' }}>
                         <span
@@ -478,9 +531,9 @@ export function SpecEditor({
             <div style={successStyle}>
               <strong>✓ Spec created!</strong>
               <p style={{ margin: '4px 0 0', fontSize: '0.875rem' }}>
-                <strong>{created.feature_name}</strong> · v{created.version} ·{' '}
+                <strong>{created.title}</strong> · v{created.version} ·{' '}
                 {created.user_stories.length} stories · ID:{' '}
-                <code style={{ fontSize: '0.75rem' }}>{created.id}</code>
+                <code style={{ fontSize: '0.75rem' }}>{created.spec_id}</code>
               </p>
             </div>
           )}

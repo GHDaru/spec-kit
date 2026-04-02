@@ -3,13 +3,14 @@
  *
  * Endpoints:
  *   GET    /api/v1/projects/{projectId}/specs
- *   POST   /api/v1/projects/{projectId}/specs
+ *   POST   /api/v1/projects/{projectId}/specs/{specId}
  *   GET    /api/v1/projects/{projectId}/specs/{specId}
- *   PUT    /api/v1/projects/{projectId}/specs/{specId}
- *   DELETE /api/v1/projects/{projectId}/specs/{specId}
+ *   POST   /api/v1/projects/{projectId}/specs/{specId}/stories
+ *   PATCH  /api/v1/projects/{projectId}/specs/{specId}/stories/{storyId}
+ *   DELETE /api/v1/projects/{projectId}/specs/{specId}/stories/{storyId}
+ *   POST   /api/v1/projects/{projectId}/specs/{specId}/requirements
  *   POST   /api/v1/projects/{projectId}/specs/{specId}/clarifications
- *   PATCH  /api/v1/projects/{projectId}/specs/{specId}/clarifications/{itemId}/resolve
- *   PATCH  /api/v1/projects/{projectId}/specs/{specId}/clarifications/{itemId}/reject
+ *   POST   /api/v1/projects/{projectId}/specs/{specId}/clarifications/{itemId}/resolve
  */
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL ?? '/api/v1';
@@ -21,7 +22,7 @@ const BASE_URL = import.meta.env.VITE_API_BASE_URL ?? '/api/v1';
 export type Priority = 'P1' | 'P2' | 'P3';
 
 export interface AcceptanceScenarioSchema {
-  id: string;
+  title: string;
   given: string;
   when: string;
   then: string;
@@ -30,9 +31,11 @@ export interface AcceptanceScenarioSchema {
 export interface UserStorySchema {
   id: string;
   title: string;
-  description: string;
+  as_a: string;
+  i_want: string;
+  so_that: string;
   priority: Priority;
-  acceptance_scenarios: AcceptanceScenarioSchema[];
+  scenarios: AcceptanceScenarioSchema[];
 }
 
 export interface FunctionalRequirementSchema {
@@ -43,33 +46,35 @@ export interface FunctionalRequirementSchema {
 
 export interface ClarificationItemSchema {
   id: string;
-  marker: string;
-  suggestion: string;
-  resolved: boolean;
+  description: string;
+  status: 'open' | 'resolved';
   resolution: string | null;
 }
 
-export interface SpecSummaryResponse {
-  id: string;
-  feature_name: string;
-  description: string;
+export interface SpecSummary {
+  spec_id: string;
+  title: string;
   version: string;
-  created_at: string;
-  updated_at: string;
+  created_date: string | null;
   story_count: number;
   requirement_count: number;
+  open_clarification_count: number;
+}
+
+export interface SpecListResponse {
+  project_id: string;
+  specs: SpecSummary[];
 }
 
 export interface SpecResponse {
-  id: string;
-  feature_name: string;
+  spec_id: string;
+  title: string;
   description: string;
   version: string;
+  created_date: string | null;
   user_stories: UserStorySchema[];
-  functional_requirements: FunctionalRequirementSchema[];
-  clarification_items: ClarificationItemSchema[];
-  created_at: string;
-  updated_at: string;
+  requirements: FunctionalRequirementSchema[];
+  clarifications: ClarificationItemSchema[];
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -77,37 +82,37 @@ export interface SpecResponse {
 // ──────────────────────────────────────────────────────────────────────────────
 
 export interface AcceptanceScenarioCreateRequest {
+  title: string;
   given: string;
   when: string;
   then: string;
 }
 
-export interface UserStoryCreateRequest {
+export interface AddUserStoryRequest {
+  id?: string;
   title: string;
-  description: string;
+  as_a: string;
+  i_want: string;
+  so_that: string;
   priority: Priority;
-  acceptance_scenarios: AcceptanceScenarioCreateRequest[];
+  scenarios: AcceptanceScenarioCreateRequest[];
 }
 
-export interface FunctionalRequirementCreateRequest {
+export interface AddRequirementRequest {
   description: string;
   story_id?: string | null;
 }
 
-export interface SpecCreateRequest {
-  feature_name: string;
-  description?: string;
-  version?: string;
-  user_stories?: UserStoryCreateRequest[];
-  functional_requirements?: FunctionalRequirementCreateRequest[];
+export interface UpdateStoryPriorityRequest {
+  priority: Priority;
 }
 
-export interface SpecUpdateRequest {
-  feature_name?: string;
+export interface CreateSpecRequest {
+  title: string;
   description?: string;
-  version?: string;
-  user_stories?: UserStoryCreateRequest[];
-  functional_requirements?: FunctionalRequirementCreateRequest[];
+  user_stories?: AddUserStoryRequest[];
+  requirements?: AddRequirementRequest[];
+  clarifications?: { description: string }[];
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -131,12 +136,16 @@ async function request<T>(url: string, init?: RequestInit): Promise<T> {
 // Endpoint functions
 // ──────────────────────────────────────────────────────────────────────────────
 
-export function listSpecs(projectId: string): Promise<SpecSummaryResponse[]> {
-  return request<SpecSummaryResponse[]>(`${BASE_URL}/projects/${projectId}/specs`);
+export function listSpecs(projectId: string): Promise<SpecListResponse> {
+  return request<SpecListResponse>(`${BASE_URL}/projects/${projectId}/specs`);
 }
 
-export function createSpec(projectId: string, body: SpecCreateRequest): Promise<SpecResponse> {
-  return request<SpecResponse>(`${BASE_URL}/projects/${projectId}/specs`, {
+export function createSpec(
+  projectId: string,
+  specId: string,
+  body: CreateSpecRequest,
+): Promise<SpecResponse> {
+  return request<SpecResponse>(`${BASE_URL}/projects/${projectId}/specs/${specId}`, {
     method: 'POST',
     body: JSON.stringify(body),
   });
@@ -146,34 +155,67 @@ export function getSpec(projectId: string, specId: string): Promise<SpecResponse
   return request<SpecResponse>(`${BASE_URL}/projects/${projectId}/specs/${specId}`);
 }
 
-export function updateSpec(
+export function addStory(
   projectId: string,
   specId: string,
-  body: SpecUpdateRequest,
+  body: AddUserStoryRequest,
 ): Promise<SpecResponse> {
-  return request<SpecResponse>(`${BASE_URL}/projects/${projectId}/specs/${specId}`, {
-    method: 'PUT',
+  return request<SpecResponse>(`${BASE_URL}/projects/${projectId}/specs/${specId}/stories`, {
+    method: 'POST',
     body: JSON.stringify(body),
   });
 }
 
-export function deleteSpec(projectId: string, specId: string): Promise<void> {
-  return request<void>(`${BASE_URL}/projects/${projectId}/specs/${specId}`, {
-    method: 'DELETE',
-  });
+export function updateStoryPriority(
+  projectId: string,
+  specId: string,
+  storyId: string,
+  priority: Priority,
+): Promise<SpecResponse> {
+  return request<SpecResponse>(
+    `${BASE_URL}/projects/${projectId}/specs/${specId}/stories/${storyId}`,
+    {
+      method: 'PATCH',
+      body: JSON.stringify({ priority } satisfies UpdateStoryPriorityRequest),
+    },
+  );
+}
+
+export function removeStory(
+  projectId: string,
+  specId: string,
+  storyId: string,
+): Promise<void> {
+  return request<void>(
+    `${BASE_URL}/projects/${projectId}/specs/${specId}/stories/${storyId}`,
+    { method: 'DELETE' },
+  );
+}
+
+export function addRequirement(
+  projectId: string,
+  specId: string,
+  body: AddRequirementRequest,
+): Promise<SpecResponse> {
+  return request<SpecResponse>(
+    `${BASE_URL}/projects/${projectId}/specs/${specId}/requirements`,
+    {
+      method: 'POST',
+      body: JSON.stringify(body),
+    },
+  );
 }
 
 export function addClarification(
   projectId: string,
   specId: string,
-  marker: string,
-  suggestion: string,
-): Promise<ClarificationItemSchema> {
-  return request<ClarificationItemSchema>(
+  description: string,
+): Promise<SpecResponse> {
+  return request<SpecResponse>(
     `${BASE_URL}/projects/${projectId}/specs/${specId}/clarifications`,
     {
       method: 'POST',
-      body: JSON.stringify({ marker, suggestion }),
+      body: JSON.stringify({ description }),
     },
   );
 }
@@ -187,19 +229,8 @@ export function resolveClarification(
   return request<SpecResponse>(
     `${BASE_URL}/projects/${projectId}/specs/${specId}/clarifications/${itemId}/resolve`,
     {
-      method: 'PATCH',
+      method: 'POST',
       body: JSON.stringify({ resolution }),
     },
-  );
-}
-
-export function rejectClarification(
-  projectId: string,
-  specId: string,
-  itemId: string,
-): Promise<SpecResponse> {
-  return request<SpecResponse>(
-    `${BASE_URL}/projects/${projectId}/specs/${specId}/clarifications/${itemId}/reject`,
-    { method: 'PATCH' },
   );
 }
