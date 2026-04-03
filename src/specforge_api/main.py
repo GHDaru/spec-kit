@@ -5,6 +5,7 @@ from fastapi import FastAPI
 from specforge_api.routers import constitution as constitution_router
 from specforge_api.routers import spec as spec_router
 from specforge_api.routers import plan as plan_router
+from specforge_api.routers import tasks as tasks_router
 
 
 def create_app() -> FastAPI:
@@ -13,13 +14,15 @@ def create_app() -> FastAPI:
         title="SpecForge API",
         description=(
             "REST API for the SpecForge CASE tool — "
-            "Module 1: Constitution Engine · Module 2: Specification Studio · Module 3: Architecture Planner"
+            "Module 1: Constitution Engine · Module 2: Specification Studio · "
+            "Module 3: Architecture Planner · Module 4: Task Forge"
         ),
-        version="3.0.0",
+        version="4.0.0",
     )
     app.include_router(constitution_router.router, prefix="/api/v1")
     app.include_router(spec_router.router, prefix="/api/v1")
     app.include_router(plan_router.router, prefix="/api/v1")
+    app.include_router(tasks_router.router, prefix="/api/v1")
     return app
 
 

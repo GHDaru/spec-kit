@@ -22,13 +22,21 @@ import {
   ResearchReportViewer,
   APIContractEditor,
 } from './modules/plan';
+import {
+  TaskListView,
+  TaskBoard,
+  DependencyGraphView,
+  TaskStatusTracker,
+  GitHubIssuesExport,
+} from './modules/tasks';
 import './App.css';
 
-type Module = '1' | '2' | '3';
+type Module = '1' | '2' | '3' | '4';
 
 type Tab1 = 'view' | 'create' | 'check' | 'history';
 type Tab2 = 'browse' | 'editor' | 'stories' | 'requirements' | 'clarifications' | 'diff';
 type Tab3 = 'browse' | 'tech-stack' | 'structure' | 'data-model' | 'research' | 'api-contract';
+type Tab4 = 'browse' | 'board' | 'deps' | 'progress' | 'export';
 
 const TABS_M1: { id: Tab1; label: string }[] = [
   { id: 'view', label: '📖 View' },
@@ -55,11 +63,20 @@ const TABS_M3: { id: Tab3; label: string }[] = [
   { id: 'api-contract', label: '🔌 API Contract' },
 ];
 
+const TABS_M4: { id: Tab4; label: string }[] = [
+  { id: 'browse', label: '📂 Browse' },
+  { id: 'board', label: '🗂️ Task Board' },
+  { id: 'deps', label: '🔗 Dependencies' },
+  { id: 'progress', label: '📊 Progress' },
+  { id: 'export', label: '🐙 GitHub Export' },
+];
+
 function App() {
   const [activeModule, setActiveModule] = useState<Module>('1');
   const [activeTab1, setActiveTab1] = useState<Tab1>('view');
   const [activeTab2, setActiveTab2] = useState<Tab2>('browse');
   const [activeTab3, setActiveTab3] = useState<Tab3>('browse');
+  const [activeTab4, setActiveTab4] = useState<Tab4>('browse');
 
   return (
     <div style={appStyle}>
@@ -75,6 +92,7 @@ function App() {
               { id: '1' as Module, label: 'Module 1 — Constitution Engine' },
               { id: '2' as Module, label: 'Module 2 — Specification Studio' },
               { id: '3' as Module, label: 'Module 3 — Architecture Planner' },
+              { id: '4' as Module, label: 'Module 4 — Task Forge' },
             ]).map((m) => (
               <button
                 key={m.id}
@@ -103,8 +121,10 @@ function App() {
           <span>⚖️ Constitution Engine — Principles &amp; Governance</span>
         ) : activeModule === '2' ? (
           <span>📐 Specification Studio — Requirements Intelligence</span>
-        ) : (
+        ) : activeModule === '3' ? (
           <span>🏗️ Architecture Planner — Technical Design &amp; Research</span>
+        ) : (
+          <span>🔨 Task Forge — Task Orchestration &amp; Management</span>
         )}
       </div>
 
@@ -136,13 +156,26 @@ function App() {
                 {t.label}
               </button>
             ))
-          : TABS_M3.map((t) => (
+          : activeModule === '3'
+          ? TABS_M3.map((t) => (
               <button
                 key={t.id}
                 onClick={() => setActiveTab3(t.id)}
                 style={{
                   ...tabBtnBase,
                   ...(activeTab3 === t.id ? tabBtnActive : tabBtnInactive),
+                }}
+              >
+                {t.label}
+              </button>
+            ))
+          : TABS_M4.map((t) => (
+              <button
+                key={t.id}
+                onClick={() => setActiveTab4(t.id)}
+                style={{
+                  ...tabBtnBase,
+                  ...(activeTab4 === t.id ? tabBtnActive : tabBtnInactive),
                 }}
               >
                 {t.label}
@@ -178,6 +211,15 @@ function App() {
             {activeTab3 === 'data-model' && <ERDiagram />}
             {activeTab3 === 'research' && <ResearchReportViewer />}
             {activeTab3 === 'api-contract' && <APIContractEditor />}
+          </>
+        )}
+        {activeModule === '4' && (
+          <>
+            {activeTab4 === 'browse' && <TaskListView />}
+            {activeTab4 === 'board' && <TaskBoard />}
+            {activeTab4 === 'deps' && <DependencyGraphView />}
+            {activeTab4 === 'progress' && <TaskStatusTracker />}
+            {activeTab4 === 'export' && <GitHubIssuesExport />}
           </>
         )}
       </main>
