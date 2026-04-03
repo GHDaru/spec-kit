@@ -1,4 +1,3 @@
-import type React from 'react';
 import { useState } from 'react';
 import {
   ConstitutionView,
@@ -59,6 +58,8 @@ import {
 } from './modules/dashboard';
 import './App.css';
 
+// ── Types ─────────────────────────────────────────────────────────────────────
+
 type Module = '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8';
 
 type Tab1 = 'view' | 'create' | 'check' | 'history';
@@ -66,75 +67,146 @@ type Tab2 = 'browse' | 'editor' | 'stories' | 'requirements' | 'clarifications' 
 type Tab3 = 'browse' | 'tech-stack' | 'structure' | 'data-model' | 'research' | 'api-contract';
 type Tab4 = 'browse' | 'board' | 'deps' | 'progress' | 'export';
 type Tab5 = 'browse' | 'editor' | 'changelog' | 'timeline' | 'summary';
-
 type Tab6 = 'console' | 'queue' | 'lanes' | 'compliance' | 'rollback';
 type Tab7 = 'checklist' | 'test-suite' | 'analysis' | 'heatmap' | 'coverage';
 type Tab8 = 'portfolio' | 'timeline' | 'reviews' | 'metrics' | 'notifications';
 
+// ── Module metadata ───────────────────────────────────────────────────────────
+
+const MODULES: { id: Module; icon: string; label: string; description: string }[] = [
+  { id: '1', icon: '⚖️',  label: 'Constitution',  description: 'Principles & Governance' },
+  { id: '2', icon: '📐',  label: 'Spec Studio',    description: 'Requirements Intelligence' },
+  { id: '3', icon: '🏗️',  label: 'Architecture',   description: 'Technical Design & Research' },
+  { id: '4', icon: '🔨',  label: 'Task Forge',     description: 'Task Orchestration' },
+  { id: '5', icon: '🚀',  label: 'Release Mgr',    description: 'Versioning & Changelog' },
+  { id: '6', icon: '⚡',  label: 'Implement',      description: 'AI-Driven Code Generation' },
+  { id: '7', icon: '🛡️',  label: 'Quality',        description: 'Testing & Validation' },
+  { id: '8', icon: '📊',  label: 'Dashboard',      description: 'Visibility & Collaboration' },
+];
+
+// ── Tab definitions ───────────────────────────────────────────────────────────
+
 const TABS_M1: { id: Tab1; label: string }[] = [
-  { id: 'view', label: '📖 View' },
-  { id: 'create', label: '✏️ Create' },
-  { id: 'check', label: '🔍 Compliance' },
+  { id: 'view',    label: '📖 View' },
+  { id: 'create',  label: '✏️ Create' },
+  { id: 'check',   label: '🔍 Compliance' },
   { id: 'history', label: '📜 History' },
 ];
 
 const TABS_M2: { id: Tab2; label: string }[] = [
-  { id: 'browse', label: '📂 Browse' },
-  { id: 'editor', label: '✏️ Editor' },
-  { id: 'stories', label: '📋 Stories' },
-  { id: 'requirements', label: '📑 Requirements' },
+  { id: 'browse',         label: '📂 Browse' },
+  { id: 'editor',         label: '✏️ Editor' },
+  { id: 'stories',        label: '📋 Stories' },
+  { id: 'requirements',   label: '📑 Requirements' },
   { id: 'clarifications', label: '💬 Clarifications' },
-  { id: 'diff', label: '🔀 Diff' },
+  { id: 'diff',           label: '🔀 Diff' },
 ];
 
 const TABS_M3: { id: Tab3; label: string }[] = [
-  { id: 'browse', label: '📂 Browse' },
-  { id: 'tech-stack', label: '🔧 Tech Stack' },
-  { id: 'structure', label: '🌳 Structure' },
-  { id: 'data-model', label: '🗄️ Data Model' },
-  { id: 'research', label: '🔬 Research' },
+  { id: 'browse',       label: '📂 Browse' },
+  { id: 'tech-stack',   label: '🔧 Tech Stack' },
+  { id: 'structure',    label: '🌳 Structure' },
+  { id: 'data-model',   label: '🗄️ Data Model' },
+  { id: 'research',     label: '🔬 Research' },
   { id: 'api-contract', label: '🔌 API Contract' },
 ];
 
 const TABS_M4: { id: Tab4; label: string }[] = [
-  { id: 'browse', label: '📂 Browse' },
-  { id: 'board', label: '🗂️ Task Board' },
-  { id: 'deps', label: '🔗 Dependencies' },
+  { id: 'browse',   label: '📂 Browse' },
+  { id: 'board',    label: '🗂️ Task Board' },
+  { id: 'deps',     label: '🔗 Dependencies' },
   { id: 'progress', label: '📊 Progress' },
-  { id: 'export', label: '🐙 GitHub Export' },
+  { id: 'export',   label: '🐙 GitHub Export' },
 ];
 
 const TABS_M5: { id: Tab5; label: string }[] = [
-  { id: 'browse', label: '📂 Browse' },
-  { id: 'editor', label: '✏️ Editor' },
+  { id: 'browse',    label: '📂 Browse' },
+  { id: 'editor',    label: '✏️ Editor' },
   { id: 'changelog', label: '📄 Changelog' },
-  { id: 'timeline', label: '📅 Timeline' },
-  { id: 'summary', label: '📊 Summary' },
+  { id: 'timeline',  label: '📅 Timeline' },
+  { id: 'summary',   label: '📊 Summary' },
 ];
 
 const TABS_M6: { id: Tab6; label: string }[] = [
-  { id: 'console', label: '🖥️ Console' },
-  { id: 'queue', label: '📋 Task Queue' },
-  { id: 'lanes', label: '🔀 Parallel Lanes' },
+  { id: 'console',    label: '🖥️ Console' },
+  { id: 'queue',      label: '📋 Task Queue' },
+  { id: 'lanes',      label: '🔀 Parallel Lanes' },
   { id: 'compliance', label: '✅ Compliance' },
-  { id: 'rollback', label: '🔄 Rollback' },
+  { id: 'rollback',   label: '🔄 Rollback' },
 ];
 
 const TABS_M7: { id: Tab7; label: string }[] = [
-  { id: 'checklist', label: '✅ Checklist' },
-  { id: 'test-suite', label: '🧪 Test Suites' },
-  { id: 'analysis', label: '📋 Analysis' },
-  { id: 'heatmap', label: '🌡️ Heatmap' },
-  { id: 'coverage', label: '🗺️ Coverage' },
+  { id: 'checklist',   label: '✅ Checklist' },
+  { id: 'test-suite',  label: '🧪 Test Suites' },
+  { id: 'analysis',    label: '📋 Analysis' },
+  { id: 'heatmap',     label: '🌡️ Heatmap' },
+  { id: 'coverage',    label: '🗺️ Coverage' },
 ];
 
 const TABS_M8: { id: Tab8; label: string }[] = [
-  { id: 'portfolio', label: '📂 Portfolio' },
-  { id: 'timeline', label: '📅 Timeline' },
-  { id: 'reviews', label: '💬 Reviews' },
-  { id: 'metrics', label: '📊 Metrics' },
+  { id: 'portfolio',     label: '📂 Portfolio' },
+  { id: 'timeline',      label: '📅 Timeline' },
+  { id: 'reviews',       label: '💬 Reviews' },
+  { id: 'metrics',       label: '📊 Metrics' },
   { id: 'notifications', label: '🔔 Notifications' },
 ];
+
+// ── Sub-components ────────────────────────────────────────────────────────────
+
+function SidebarItem({
+  icon,
+  label,
+  description,
+  active,
+  onClick,
+}: {
+  icon: string;
+  label: string;
+  description: string;
+  active: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      className={`sf-sidebar__item${active ? ' is-active' : ''}`}
+      onClick={onClick}
+      role="menuitem"
+      aria-current={active ? 'page' : undefined}
+      title={description}
+    >
+      <span className="sf-sidebar__icon" aria-hidden="true">{icon}</span>
+      <span className="sf-sidebar__label">{label}</span>
+    </button>
+  );
+}
+
+function TabBar<T extends string>({
+  tabs,
+  active,
+  onSelect,
+}: {
+  tabs: { id: T; label: string }[];
+  active: T;
+  onSelect: (id: T) => void;
+}) {
+  return (
+    <nav className="sf-tabs" role="tablist" aria-label="Module views">
+      {tabs.map((t) => (
+        <button
+          key={t.id}
+          role="tab"
+          aria-selected={active === t.id}
+          className={`sf-tabs__btn${active === t.id ? ' is-active' : ''}`}
+          onClick={() => onSelect(t.id)}
+        >
+          {t.label}
+        </button>
+      ))}
+    </nav>
+  );
+}
+
+// ── App ───────────────────────────────────────────────────────────────────────
 
 function App() {
   const [activeModule, setActiveModule] = useState<Module>('1');
@@ -147,339 +219,150 @@ function App() {
   const [activeTab7, setActiveTab7] = useState<Tab7>('checklist');
   const [activeTab8, setActiveTab8] = useState<Tab8>('portfolio');
 
+  const currentModule = MODULES.find((m) => m.id === activeModule)!;
+
   return (
-    <div style={appStyle}>
-      {/* Header */}
-      <header style={headerStyle}>
-        <div style={headerInner}>
-          <h1 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 700 }}>
-            SpecForge
-          </h1>
-          {/* Module Switcher */}
-          <div style={{ display: 'flex', gap: 4, marginLeft: 'auto', flexWrap: 'wrap' }}>
-            {([
-              { id: '1' as Module, label: 'Module 1 — Constitution Engine' },
-              { id: '2' as Module, label: 'Module 2 — Specification Studio' },
-              { id: '3' as Module, label: 'Module 3 — Architecture Planner' },
-              { id: '4' as Module, label: 'Module 4 — Task Forge' },
-              { id: '5' as Module, label: 'Module 5 — Release Manager' },
-              { id: '6' as Module, label: 'Module 6 — Implement & Execute' },
-              { id: '7' as Module, label: 'Module 7 — Quality Guardian' },
-              { id: '8' as Module, label: 'Module 8 — Project Dashboard' },
-            ]).map((m) => (
-              <button
-                key={m.id}
-                onClick={() => setActiveModule(m.id)}
-                style={{
-                  padding: '6px 14px',
-                  background: activeModule === m.id ? 'rgba(255,255,255,0.2)' : 'transparent',
-                  border: '1px solid rgba(255,255,255,0.3)',
-                  borderRadius: 6,
-                  color: '#fff',
-                  cursor: 'pointer',
-                  fontSize: '0.8rem',
-                  fontWeight: activeModule === m.id ? 700 : 400,
-                }}
-              >
-                {m.label}
-              </button>
-            ))}
-          </div>
-        </div>
+    <div className="sf-shell">
+      {/* ── Header ── */}
+      <header className="sf-header">
+        <span className="sf-header__logo">SpecForge</span>
+        <span className="sf-header__module-name">
+          {currentModule.icon} {currentModule.label} — {currentModule.description}
+        </span>
       </header>
 
-      {/* Module subtitle */}
-      <div style={subtitleStyle}>
-        {activeModule === '1' ? (
-          <span>⚖️ Constitution Engine — Principles &amp; Governance</span>
-        ) : activeModule === '2' ? (
-          <span>📐 Specification Studio — Requirements Intelligence</span>
-        ) : activeModule === '3' ? (
-          <span>🏗️ Architecture Planner — Technical Design &amp; Research</span>
-        ) : activeModule === '4' ? (
-          <span>🔨 Task Forge — Task Orchestration &amp; Management</span>
-        ) : activeModule === '5' ? (
-          <span>🚀 Release Manager — Versioning &amp; Changelog</span>
-        ) : activeModule === '6' ? (
-          <span>⚡ Implement &amp; Execute — AI-Driven Code Generation</span>
-        ) : activeModule === '7' ? (
-          <span>🛡️ Quality Guardian — Testing &amp; Validation</span>
-        ) : (
-          <span>📊 Project Dashboard — Visibility &amp; Team Collaboration</span>
-        )}
+      {/* ── Body: sidebar + content ── */}
+      <div className="sf-body">
+        {/* Sidebar */}
+        <aside className="sf-sidebar" role="navigation" aria-label="Module navigation">
+          <nav role="menu">
+            {MODULES.map((m) => (
+              <SidebarItem
+                key={m.id}
+                icon={m.icon}
+                label={m.label}
+                description={m.description}
+                active={activeModule === m.id}
+                onClick={() => setActiveModule(m.id)}
+              />
+            ))}
+          </nav>
+        </aside>
+
+        {/* Content column */}
+        <div className="sf-content">
+          {/* Tab bar */}
+          {activeModule === '1' && (
+            <TabBar tabs={TABS_M1} active={activeTab1} onSelect={setActiveTab1} />
+          )}
+          {activeModule === '2' && (
+            <TabBar tabs={TABS_M2} active={activeTab2} onSelect={setActiveTab2} />
+          )}
+          {activeModule === '3' && (
+            <TabBar tabs={TABS_M3} active={activeTab3} onSelect={setActiveTab3} />
+          )}
+          {activeModule === '4' && (
+            <TabBar tabs={TABS_M4} active={activeTab4} onSelect={setActiveTab4} />
+          )}
+          {activeModule === '5' && (
+            <TabBar tabs={TABS_M5} active={activeTab5} onSelect={setActiveTab5} />
+          )}
+          {activeModule === '6' && (
+            <TabBar tabs={TABS_M6} active={activeTab6} onSelect={setActiveTab6} />
+          )}
+          {activeModule === '7' && (
+            <TabBar tabs={TABS_M7} active={activeTab7} onSelect={setActiveTab7} />
+          )}
+          {activeModule === '8' && (
+            <TabBar tabs={TABS_M8} active={activeTab8} onSelect={setActiveTab8} />
+          )}
+
+          {/* Main panel */}
+          <main className="sf-main" role="tabpanel">
+            {activeModule === '1' && (
+              <>
+                {activeTab1 === 'view'    && <ConstitutionView />}
+                {activeTab1 === 'create'  && <ConstitutionCreate />}
+                {activeTab1 === 'check'   && <ComplianceCheck />}
+                {activeTab1 === 'history' && <ConstitutionHistory />}
+              </>
+            )}
+            {activeModule === '2' && (
+              <>
+                {activeTab2 === 'browse'         && <SpecView />}
+                {activeTab2 === 'editor'         && <SpecEditor />}
+                {activeTab2 === 'stories'        && <UserStoryBoard />}
+                {activeTab2 === 'requirements'   && <RequirementsList />}
+                {activeTab2 === 'clarifications' && <ClarificationPanel />}
+                {activeTab2 === 'diff'           && <SpecDiffViewer />}
+              </>
+            )}
+            {activeModule === '3' && (
+              <>
+                {activeTab3 === 'browse'       && <PlanView />}
+                {activeTab3 === 'tech-stack'   && <TechStackSelector />}
+                {activeTab3 === 'structure'    && <ProjectTreePreview />}
+                {activeTab3 === 'data-model'   && <ERDiagram />}
+                {activeTab3 === 'research'     && <ResearchReportViewer />}
+                {activeTab3 === 'api-contract' && <APIContractEditor />}
+              </>
+            )}
+            {activeModule === '4' && (
+              <>
+                {activeTab4 === 'browse'   && <TaskListView />}
+                {activeTab4 === 'board'    && <TaskBoard />}
+                {activeTab4 === 'deps'     && <DependencyGraphView />}
+                {activeTab4 === 'progress' && <TaskStatusTracker />}
+                {activeTab4 === 'export'   && <GitHubIssuesExport />}
+              </>
+            )}
+            {activeModule === '5' && (
+              <>
+                {activeTab5 === 'browse'    && <ReleaseListView />}
+                {activeTab5 === 'editor'    && <ReleaseEditor />}
+                {activeTab5 === 'changelog' && <ChangelogViewer />}
+                {activeTab5 === 'timeline'  && <ReleaseTimeline />}
+                {activeTab5 === 'summary'   && <ReleaseSummary />}
+              </>
+            )}
+            {activeModule === '6' && (
+              <>
+                {activeTab6 === 'console'    && <ExecutionConsole />}
+                {activeTab6 === 'queue'      && <TaskQueue />}
+                {activeTab6 === 'lanes'      && <ParallelExecutionLanes />}
+                {activeTab6 === 'compliance' && <ComplianceReportPanel />}
+                {activeTab6 === 'rollback'   && <RollbackDialog />}
+              </>
+            )}
+            {activeModule === '7' && (
+              <>
+                {activeTab7 === 'checklist'  && <ChecklistBuilder />}
+                {activeTab7 === 'test-suite' && <TestSuiteViewer />}
+                {activeTab7 === 'analysis'   && <AnalysisReportViewer />}
+                {activeTab7 === 'heatmap'    && <ConsistencyHeatmap />}
+                {activeTab7 === 'coverage'   && <CoverageMap />}
+              </>
+            )}
+            {activeModule === '8' && (
+              <>
+                {activeTab8 === 'portfolio'     && <FeaturePortfolio />}
+                {activeTab8 === 'timeline'      && <SDDPhaseTimeline />}
+                {activeTab8 === 'reviews'       && <ReviewWorkflow />}
+                {activeTab8 === 'metrics'       && <MetricsDashboard />}
+                {activeTab8 === 'notifications' && <NotificationCenter />}
+              </>
+            )}
+          </main>
+        </div>
       </div>
 
-      {/* Tab navigation */}
-      <nav style={navStyle}>
-        {activeModule === '1'
-          ? TABS_M1.map((t) => (
-              <button
-                key={t.id}
-                onClick={() => setActiveTab1(t.id)}
-                style={{
-                  ...tabBtnBase,
-                  ...(activeTab1 === t.id ? tabBtnActive : tabBtnInactive),
-                }}
-              >
-                {t.label}
-              </button>
-            ))
-          : activeModule === '2'
-          ? TABS_M2.map((t) => (
-              <button
-                key={t.id}
-                onClick={() => setActiveTab2(t.id)}
-                style={{
-                  ...tabBtnBase,
-                  ...(activeTab2 === t.id ? tabBtnActive : tabBtnInactive),
-                }}
-              >
-                {t.label}
-              </button>
-            ))
-          : activeModule === '3'
-          ? TABS_M3.map((t) => (
-              <button
-                key={t.id}
-                onClick={() => setActiveTab3(t.id)}
-                style={{
-                  ...tabBtnBase,
-                  ...(activeTab3 === t.id ? tabBtnActive : tabBtnInactive),
-                }}
-              >
-                {t.label}
-              </button>
-            ))
-          : activeModule === '4'
-          ? TABS_M4.map((t) => (
-              <button
-                key={t.id}
-                onClick={() => setActiveTab4(t.id)}
-                style={{
-                  ...tabBtnBase,
-                  ...(activeTab4 === t.id ? tabBtnActive : tabBtnInactive),
-                }}
-              >
-                {t.label}
-              </button>
-            ))
-          : TABS_M5.map((t) => (
-              <button
-                key={t.id}
-                onClick={() => setActiveTab5(t.id)}
-                style={{
-                  ...tabBtnBase,
-                  ...(activeTab5 === t.id ? tabBtnActive : tabBtnInactive),
-                }}
-              >
-                {t.label}
-              </button>
-            ))}
-        {activeModule === '6' &&
-          TABS_M6.map((t) => (
-            <button
-              key={t.id}
-              onClick={() => setActiveTab6(t.id)}
-              style={{
-                ...tabBtnBase,
-                ...(activeTab6 === t.id ? tabBtnActive : tabBtnInactive),
-              }}
-            >
-              {t.label}
-            </button>
-          ))}
-        {activeModule === '7' &&
-          TABS_M7.map((t) => (
-            <button
-              key={t.id}
-              onClick={() => setActiveTab7(t.id)}
-              style={{
-                ...tabBtnBase,
-                ...(activeTab7 === t.id ? tabBtnActive : tabBtnInactive),
-              }}
-            >
-              {t.label}
-            </button>
-          ))}
-        {activeModule === '8' &&
-          TABS_M8.map((t) => (
-            <button
-              key={t.id}
-              onClick={() => setActiveTab8(t.id)}
-              style={{
-                ...tabBtnBase,
-                ...(activeTab8 === t.id ? tabBtnActive : tabBtnInactive),
-              }}
-            >
-              {t.label}
-            </button>
-          ))}
-      </nav>
-
-      {/* Content panel */}
-      <main style={mainStyle}>
-        {activeModule === '1' && (
-          <>
-            {activeTab1 === 'view' && <ConstitutionView />}
-            {activeTab1 === 'create' && <ConstitutionCreate />}
-            {activeTab1 === 'check' && <ComplianceCheck />}
-            {activeTab1 === 'history' && <ConstitutionHistory />}
-          </>
-        )}
-        {activeModule === '2' && (
-          <>
-            {activeTab2 === 'browse' && <SpecView />}
-            {activeTab2 === 'editor' && <SpecEditor />}
-            {activeTab2 === 'stories' && <UserStoryBoard />}
-            {activeTab2 === 'requirements' && <RequirementsList />}
-            {activeTab2 === 'clarifications' && <ClarificationPanel />}
-            {activeTab2 === 'diff' && <SpecDiffViewer />}
-          </>
-        )}
-        {activeModule === '3' && (
-          <>
-            {activeTab3 === 'browse' && <PlanView />}
-            {activeTab3 === 'tech-stack' && <TechStackSelector />}
-            {activeTab3 === 'structure' && <ProjectTreePreview />}
-            {activeTab3 === 'data-model' && <ERDiagram />}
-            {activeTab3 === 'research' && <ResearchReportViewer />}
-            {activeTab3 === 'api-contract' && <APIContractEditor />}
-          </>
-        )}
-        {activeModule === '4' && (
-          <>
-            {activeTab4 === 'browse' && <TaskListView />}
-            {activeTab4 === 'board' && <TaskBoard />}
-            {activeTab4 === 'deps' && <DependencyGraphView />}
-            {activeTab4 === 'progress' && <TaskStatusTracker />}
-            {activeTab4 === 'export' && <GitHubIssuesExport />}
-          </>
-        )}
-        {activeModule === '5' && (
-          <>
-            {activeTab5 === 'browse' && <ReleaseListView />}
-            {activeTab5 === 'editor' && <ReleaseEditor />}
-            {activeTab5 === 'changelog' && <ChangelogViewer />}
-            {activeTab5 === 'timeline' && <ReleaseTimeline />}
-            {activeTab5 === 'summary' && <ReleaseSummary />}
-          </>
-        )}
-        {activeModule === '6' && (
-          <>
-            {activeTab6 === 'console' && <ExecutionConsole />}
-            {activeTab6 === 'queue' && <TaskQueue />}
-            {activeTab6 === 'lanes' && <ParallelExecutionLanes />}
-            {activeTab6 === 'compliance' && <ComplianceReportPanel />}
-            {activeTab6 === 'rollback' && <RollbackDialog />}
-          </>
-        )}
-        {activeModule === '7' && (
-          <>
-            {activeTab7 === 'checklist' && <ChecklistBuilder />}
-            {activeTab7 === 'test-suite' && <TestSuiteViewer />}
-            {activeTab7 === 'analysis' && <AnalysisReportViewer />}
-            {activeTab7 === 'heatmap' && <ConsistencyHeatmap />}
-            {activeTab7 === 'coverage' && <CoverageMap />}
-          </>
-        )}
-        {activeModule === '8' && (
-          <>
-            {activeTab8 === 'portfolio' && <FeaturePortfolio />}
-            {activeTab8 === 'timeline' && <SDDPhaseTimeline />}
-            {activeTab8 === 'reviews' && <ReviewWorkflow />}
-            {activeTab8 === 'metrics' && <MetricsDashboard />}
-            {activeTab8 === 'notifications' && <NotificationCenter />}
-          </>
-        )}
-      </main>
-
-      {/* Footer */}
-      <footer style={footerStyle}>
+      {/* ── Footer ── */}
+      <footer className="sf-footer">
         SpecForge · API{' '}
-        <code style={{ fontSize: '0.8rem' }}>http://localhost:8000/api/v1</code>
+        <code>http://localhost:8000/api/v1</code>
       </footer>
     </div>
   );
 }
 
 export default App;
-
-// ── Styles ───────────────────────────────────────────────────────────────────
-
-const appStyle: React.CSSProperties = {
-  minHeight: '100vh',
-  display: 'flex',
-  flexDirection: 'column',
-  fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-  background: '#f3f4f6',
-  color: '#111827',
-};
-
-const headerStyle: React.CSSProperties = {
-  background: '#1e40af',
-  color: '#fff',
-  padding: '0 24px',
-};
-
-const headerInner: React.CSSProperties = {
-  maxWidth: 1100,
-  margin: '0 auto',
-  padding: '12px 0',
-  display: 'flex',
-  alignItems: 'center',
-  gap: 16,
-};
-
-const subtitleStyle: React.CSSProperties = {
-  background: '#1e3a8a',
-  color: '#bfdbfe',
-  fontSize: '0.78rem',
-  padding: '4px 24px',
-  textAlign: 'center',
-};
-
-const navStyle: React.CSSProperties = {
-  background: '#1d4ed8',
-  padding: '0 24px',
-  display: 'flex',
-  gap: 4,
-  flexWrap: 'wrap',
-};
-
-const tabBtnBase: React.CSSProperties = {
-  padding: '10px 18px',
-  background: 'none',
-  border: 'none',
-  cursor: 'pointer',
-  fontSize: '0.9rem',
-  fontWeight: 500,
-  borderBottom: '3px solid transparent',
-  transition: 'color 0.15s',
-};
-
-const tabBtnActive: React.CSSProperties = {
-  color: '#fff',
-  borderBottom: '3px solid #fff',
-};
-
-const tabBtnInactive: React.CSSProperties = {
-  color: '#bfdbfe',
-};
-
-const mainStyle: React.CSSProperties = {
-  flex: 1,
-  maxWidth: 1100,
-  width: '100%',
-  margin: '0 auto',
-  padding: 24,
-  background: '#fff',
-  boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-  borderRadius: '0 0 8px 8px',
-};
-
-const footerStyle: React.CSSProperties = {
-  textAlign: 'center',
-  padding: '12px',
-  fontSize: '0.8rem',
-  color: '#6b7280',
-};
