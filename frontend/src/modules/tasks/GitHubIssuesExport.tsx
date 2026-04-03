@@ -125,7 +125,10 @@ export function GitHubIssuesExport() {
         const bodyLines = [`**Phase**: ${task.phase}`, `**Status**: ${task.status}`];
         if (task.story_id) bodyLines.push(`**Story**: ${task.story_id}`);
         if (task.dependencies.length) bodyLines.push(`**Depends on**: ${task.dependencies.join(', ')}`);
-        if (task.description) { bodyLines.push(''); bodyLines.push(task.description); }
+        if (task.description) {
+          bodyLines.push('');
+          bodyLines.push(task.description);
+        }
         previews.push({
           task_id: task.task_id,
           title: task.title,
