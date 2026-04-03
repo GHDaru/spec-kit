@@ -36,15 +36,24 @@ import {
   ReleaseSummary,
   ReleaseEditor,
 } from './modules/releases';
+import {
+  ExecutionConsole,
+  TaskQueue,
+  ParallelExecutionLanes,
+  ComplianceReportPanel,
+  RollbackDialog,
+} from './modules/implement';
 import './App.css';
 
-type Module = '1' | '2' | '3' | '4' | '5';
+type Module = '1' | '2' | '3' | '4' | '5' | '6';
 
 type Tab1 = 'view' | 'create' | 'check' | 'history';
 type Tab2 = 'browse' | 'editor' | 'stories' | 'requirements' | 'clarifications' | 'diff';
 type Tab3 = 'browse' | 'tech-stack' | 'structure' | 'data-model' | 'research' | 'api-contract';
 type Tab4 = 'browse' | 'board' | 'deps' | 'progress' | 'export';
 type Tab5 = 'browse' | 'editor' | 'changelog' | 'timeline' | 'summary';
+
+type Tab6 = 'console' | 'queue' | 'lanes' | 'compliance' | 'rollback';
 
 const TABS_M1: { id: Tab1; label: string }[] = [
   { id: 'view', label: '📖 View' },
@@ -87,6 +96,14 @@ const TABS_M5: { id: Tab5; label: string }[] = [
   { id: 'summary', label: '📊 Summary' },
 ];
 
+const TABS_M6: { id: Tab6; label: string }[] = [
+  { id: 'console', label: '🖥️ Console' },
+  { id: 'queue', label: '📋 Task Queue' },
+  { id: 'lanes', label: '🔀 Parallel Lanes' },
+  { id: 'compliance', label: '✅ Compliance' },
+  { id: 'rollback', label: '🔄 Rollback' },
+];
+
 function App() {
   const [activeModule, setActiveModule] = useState<Module>('1');
   const [activeTab1, setActiveTab1] = useState<Tab1>('view');
@@ -94,6 +111,7 @@ function App() {
   const [activeTab3, setActiveTab3] = useState<Tab3>('browse');
   const [activeTab4, setActiveTab4] = useState<Tab4>('browse');
   const [activeTab5, setActiveTab5] = useState<Tab5>('browse');
+  const [activeTab6, setActiveTab6] = useState<Tab6>('console');
 
   return (
     <div style={appStyle}>
@@ -111,6 +129,7 @@ function App() {
               { id: '3' as Module, label: 'Module 3 — Architecture Planner' },
               { id: '4' as Module, label: 'Module 4 — Task Forge' },
               { id: '5' as Module, label: 'Module 5 — Release Manager' },
+              { id: '6' as Module, label: 'Module 6 — Implement & Execute' },
             ]).map((m) => (
               <button
                 key={m.id}
@@ -143,8 +162,10 @@ function App() {
           <span>🏗️ Architecture Planner — Technical Design &amp; Research</span>
         ) : activeModule === '4' ? (
           <span>🔨 Task Forge — Task Orchestration &amp; Management</span>
-        ) : (
+        ) : activeModule === '5' ? (
           <span>🚀 Release Manager — Versioning &amp; Changelog</span>
+        ) : (
+          <span>⚡ Implement &amp; Execute — AI-Driven Code Generation</span>
         )}
       </div>
 
@@ -214,6 +235,19 @@ function App() {
                 {t.label}
               </button>
             ))}
+        {activeModule === '6' &&
+          TABS_M6.map((t) => (
+            <button
+              key={t.id}
+              onClick={() => setActiveTab6(t.id)}
+              style={{
+                ...tabBtnBase,
+                ...(activeTab6 === t.id ? tabBtnActive : tabBtnInactive),
+              }}
+            >
+              {t.label}
+            </button>
+          ))}
       </nav>
 
       {/* Content panel */}
@@ -262,6 +296,15 @@ function App() {
             {activeTab5 === 'changelog' && <ChangelogViewer />}
             {activeTab5 === 'timeline' && <ReleaseTimeline />}
             {activeTab5 === 'summary' && <ReleaseSummary />}
+          </>
+        )}
+        {activeModule === '6' && (
+          <>
+            {activeTab6 === 'console' && <ExecutionConsole />}
+            {activeTab6 === 'queue' && <TaskQueue />}
+            {activeTab6 === 'lanes' && <ParallelExecutionLanes />}
+            {activeTab6 === 'compliance' && <ComplianceReportPanel />}
+            {activeTab6 === 'rollback' && <RollbackDialog />}
           </>
         )}
       </main>
