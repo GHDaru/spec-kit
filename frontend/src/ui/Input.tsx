@@ -8,7 +8,7 @@ export function Input({ style, ...rest }: InputProps) {
       style={{
         padding: '8px 12px',
         border: '1px solid var(--color-border)' as string,
-        borderRadius: 'var(--radius-md)' as unknown as number,
+        borderRadius: 'var(--radius-md)' as string,
         fontSize: '0.95rem',
         outline: 'none',
         width: '100%',

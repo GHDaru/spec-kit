@@ -9,12 +9,12 @@ interface BadgeProps {
 }
 
 const PALETTE: Record<Color, { background: string; color: string }> = {
-  default: { background: '#e5e7eb', color: '#374151' },
-  primary: { background: '#dbeafe', color: '#1e40af' },
-  success: { background: '#dcfce7', color: '#15803d' },
-  warning: { background: '#fef9c3', color: '#a16207' },
-  danger:  { background: '#fee2e2', color: '#991b1b' },
-  info:    { background: '#e0f2fe', color: '#075985' },
+  default: { background: '#e5e7eb',                          color: '#374151' },
+  primary: { background: 'var(--color-primary-light)',        color: 'var(--color-primary)' },
+  success: { background: '#dcfce7',                          color: 'var(--color-success)' },
+  warning: { background: '#fef9c3',                          color: 'var(--color-warning)' },
+  danger:  { background: '#fee2e2',                          color: 'var(--color-danger)' },
+  info:    { background: '#e0f2fe',                          color: 'var(--color-info)' },
 };
 
 export function Badge({ color = 'default', children, style }: BadgeProps) {

@@ -15,7 +15,7 @@ const BASE: React.CSSProperties = {
   gap: 6,
   fontWeight: 600,
   border: 'none',
-  borderRadius: 'var(--radius-md)' as unknown as number,
+  borderRadius: 'var(--radius-md)' as string,
   cursor: 'pointer',
   transition: 'background 0.12s, opacity 0.12s',
   fontFamily: 'inherit',

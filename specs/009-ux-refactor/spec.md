@@ -27,7 +27,7 @@ Three stacked horizontal bars appear above the content area:
 This triple-bar chrome consumes ~90 px of vertical space without adding proportional value.
 
 ### 2.3 No Design Tokens
-Colors, spacing, and shadows are hard-coded as hex literals in every file. A change to the primary brand colour requires touching 20+ files. There is no support for theming.
+Colors, spacing, and shadows are hard-coded as hex literals in every file. A change to the primary brand color requires touching 20+ files. There is no support for theming.
 
 ### 2.4 No Shared UI Primitives
 Every module defines its own `styles.ts` with duplicated button, input, and error-box constants. The resulting 40+ component variants are inconsistent in padding, border-radius, and focus states.
