@@ -22,8 +22,6 @@ from specify_cli.dashboard import (
     TeamMember,
     TeamRole,
 )
-from fastapi import FastAPI
-
 from specforge_api.routers import dashboard as dashboard_router
 
 
