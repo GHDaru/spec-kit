@@ -4,3 +4,5 @@ export { ProjectTreePreview } from './ProjectTreePreview';
 export { ERDiagram } from './ERDiagram';
 export { ResearchReportViewer } from './ResearchReportViewer';
 export { APIContractEditor } from './APIContractEditor';
+export { APIContractViewer } from './APIContractViewer';
+export { PlanComplianceCheck } from './PlanComplianceCheck';

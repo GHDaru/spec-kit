@@ -103,6 +103,13 @@ export interface APIContract {
   endpoints: APIEndpoint[];
 }
 
+export interface PlanComplianceResult {
+  passed: boolean;
+  blocking_count: number;
+  warning_count: number;
+  violations: { principle: string; message: string; blocking: boolean }[];
+}
+
 export interface PlanSummary {
   plan_id: string;
   spec_id: string;
