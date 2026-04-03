@@ -4,6 +4,7 @@ import {
   getDemoProject,
   type Feature,
   type FeatureListResponse,
+  type SDDPhase,
   type PhaseStatus,
   SDD_PHASES,
   PHASE_LABEL,

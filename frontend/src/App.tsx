@@ -43,9 +43,23 @@ import {
   ComplianceReportPanel,
   RollbackDialog,
 } from './modules/implement';
+import {
+  ChecklistBuilder,
+  TestSuiteViewer,
+  AnalysisReportViewer,
+  ConsistencyHeatmap,
+  CoverageMap,
+} from './modules/quality';
+import {
+  FeaturePortfolio,
+  SDDPhaseTimeline,
+  ReviewWorkflow,
+  MetricsDashboard,
+  NotificationCenter,
+} from './modules/dashboard';
 import './App.css';
 
-type Module = '1' | '2' | '3' | '4' | '5' | '6';
+type Module = '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8';
 
 type Tab1 = 'view' | 'create' | 'check' | 'history';
 type Tab2 = 'browse' | 'editor' | 'stories' | 'requirements' | 'clarifications' | 'diff';
@@ -54,6 +68,8 @@ type Tab4 = 'browse' | 'board' | 'deps' | 'progress' | 'export';
 type Tab5 = 'browse' | 'editor' | 'changelog' | 'timeline' | 'summary';
 
 type Tab6 = 'console' | 'queue' | 'lanes' | 'compliance' | 'rollback';
+type Tab7 = 'checklist' | 'test-suite' | 'analysis' | 'heatmap' | 'coverage';
+type Tab8 = 'portfolio' | 'timeline' | 'reviews' | 'metrics' | 'notifications';
 
 const TABS_M1: { id: Tab1; label: string }[] = [
   { id: 'view', label: '📖 View' },
@@ -104,6 +120,22 @@ const TABS_M6: { id: Tab6; label: string }[] = [
   { id: 'rollback', label: '🔄 Rollback' },
 ];
 
+const TABS_M7: { id: Tab7; label: string }[] = [
+  { id: 'checklist', label: '✅ Checklist' },
+  { id: 'test-suite', label: '🧪 Test Suites' },
+  { id: 'analysis', label: '📋 Analysis' },
+  { id: 'heatmap', label: '🌡️ Heatmap' },
+  { id: 'coverage', label: '🗺️ Coverage' },
+];
+
+const TABS_M8: { id: Tab8; label: string }[] = [
+  { id: 'portfolio', label: '📂 Portfolio' },
+  { id: 'timeline', label: '📅 Timeline' },
+  { id: 'reviews', label: '💬 Reviews' },
+  { id: 'metrics', label: '📊 Metrics' },
+  { id: 'notifications', label: '🔔 Notifications' },
+];
+
 function App() {
   const [activeModule, setActiveModule] = useState<Module>('1');
   const [activeTab1, setActiveTab1] = useState<Tab1>('view');
@@ -112,6 +144,8 @@ function App() {
   const [activeTab4, setActiveTab4] = useState<Tab4>('browse');
   const [activeTab5, setActiveTab5] = useState<Tab5>('browse');
   const [activeTab6, setActiveTab6] = useState<Tab6>('console');
+  const [activeTab7, setActiveTab7] = useState<Tab7>('checklist');
+  const [activeTab8, setActiveTab8] = useState<Tab8>('portfolio');
 
   return (
     <div style={appStyle}>
@@ -130,6 +164,8 @@ function App() {
               { id: '4' as Module, label: 'Module 4 — Task Forge' },
               { id: '5' as Module, label: 'Module 5 — Release Manager' },
               { id: '6' as Module, label: 'Module 6 — Implement & Execute' },
+              { id: '7' as Module, label: 'Module 7 — Quality Guardian' },
+              { id: '8' as Module, label: 'Module 8 — Project Dashboard' },
             ]).map((m) => (
               <button
                 key={m.id}
@@ -164,8 +200,12 @@ function App() {
           <span>🔨 Task Forge — Task Orchestration &amp; Management</span>
         ) : activeModule === '5' ? (
           <span>🚀 Release Manager — Versioning &amp; Changelog</span>
-        ) : (
+        ) : activeModule === '6' ? (
           <span>⚡ Implement &amp; Execute — AI-Driven Code Generation</span>
+        ) : activeModule === '7' ? (
+          <span>🛡️ Quality Guardian — Testing &amp; Validation</span>
+        ) : (
+          <span>📊 Project Dashboard — Visibility &amp; Team Collaboration</span>
         )}
       </div>
 
@@ -248,6 +288,32 @@ function App() {
               {t.label}
             </button>
           ))}
+        {activeModule === '7' &&
+          TABS_M7.map((t) => (
+            <button
+              key={t.id}
+              onClick={() => setActiveTab7(t.id)}
+              style={{
+                ...tabBtnBase,
+                ...(activeTab7 === t.id ? tabBtnActive : tabBtnInactive),
+              }}
+            >
+              {t.label}
+            </button>
+          ))}
+        {activeModule === '8' &&
+          TABS_M8.map((t) => (
+            <button
+              key={t.id}
+              onClick={() => setActiveTab8(t.id)}
+              style={{
+                ...tabBtnBase,
+                ...(activeTab8 === t.id ? tabBtnActive : tabBtnInactive),
+              }}
+            >
+              {t.label}
+            </button>
+          ))}
       </nav>
 
       {/* Content panel */}
@@ -305,6 +371,24 @@ function App() {
             {activeTab6 === 'lanes' && <ParallelExecutionLanes />}
             {activeTab6 === 'compliance' && <ComplianceReportPanel />}
             {activeTab6 === 'rollback' && <RollbackDialog />}
+          </>
+        )}
+        {activeModule === '7' && (
+          <>
+            {activeTab7 === 'checklist' && <ChecklistBuilder />}
+            {activeTab7 === 'test-suite' && <TestSuiteViewer />}
+            {activeTab7 === 'analysis' && <AnalysisReportViewer />}
+            {activeTab7 === 'heatmap' && <ConsistencyHeatmap />}
+            {activeTab7 === 'coverage' && <CoverageMap />}
+          </>
+        )}
+        {activeModule === '8' && (
+          <>
+            {activeTab8 === 'portfolio' && <FeaturePortfolio />}
+            {activeTab8 === 'timeline' && <SDDPhaseTimeline />}
+            {activeTab8 === 'reviews' && <ReviewWorkflow />}
+            {activeTab8 === 'metrics' && <MetricsDashboard />}
+            {activeTab8 === 'notifications' && <NotificationCenter />}
           </>
         )}
       </main>

@@ -16,6 +16,7 @@ import {
   demoBannerStyle,
   errorStyle,
   inputStyle,
+  labelStyle,
   accentColor,
   accentLight,
   accentBorder,
