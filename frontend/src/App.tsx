@@ -29,14 +29,22 @@ import {
   TaskStatusTracker,
   GitHubIssuesExport,
 } from './modules/tasks';
+import {
+  ReleaseListView,
+  ChangelogViewer,
+  ReleaseTimeline,
+  ReleaseSummary,
+  ReleaseEditor,
+} from './modules/releases';
 import './App.css';
 
-type Module = '1' | '2' | '3' | '4';
+type Module = '1' | '2' | '3' | '4' | '5';
 
 type Tab1 = 'view' | 'create' | 'check' | 'history';
 type Tab2 = 'browse' | 'editor' | 'stories' | 'requirements' | 'clarifications' | 'diff';
 type Tab3 = 'browse' | 'tech-stack' | 'structure' | 'data-model' | 'research' | 'api-contract';
 type Tab4 = 'browse' | 'board' | 'deps' | 'progress' | 'export';
+type Tab5 = 'browse' | 'editor' | 'changelog' | 'timeline' | 'summary';
 
 const TABS_M1: { id: Tab1; label: string }[] = [
   { id: 'view', label: '📖 View' },
@@ -71,12 +79,21 @@ const TABS_M4: { id: Tab4; label: string }[] = [
   { id: 'export', label: '🐙 GitHub Export' },
 ];
 
+const TABS_M5: { id: Tab5; label: string }[] = [
+  { id: 'browse', label: '📂 Browse' },
+  { id: 'editor', label: '✏️ Editor' },
+  { id: 'changelog', label: '📄 Changelog' },
+  { id: 'timeline', label: '📅 Timeline' },
+  { id: 'summary', label: '📊 Summary' },
+];
+
 function App() {
   const [activeModule, setActiveModule] = useState<Module>('1');
   const [activeTab1, setActiveTab1] = useState<Tab1>('view');
   const [activeTab2, setActiveTab2] = useState<Tab2>('browse');
   const [activeTab3, setActiveTab3] = useState<Tab3>('browse');
   const [activeTab4, setActiveTab4] = useState<Tab4>('browse');
+  const [activeTab5, setActiveTab5] = useState<Tab5>('browse');
 
   return (
     <div style={appStyle}>
@@ -93,6 +110,7 @@ function App() {
               { id: '2' as Module, label: 'Module 2 — Specification Studio' },
               { id: '3' as Module, label: 'Module 3 — Architecture Planner' },
               { id: '4' as Module, label: 'Module 4 — Task Forge' },
+              { id: '5' as Module, label: 'Module 5 — Release Manager' },
             ]).map((m) => (
               <button
                 key={m.id}
@@ -123,8 +141,10 @@ function App() {
           <span>📐 Specification Studio — Requirements Intelligence</span>
         ) : activeModule === '3' ? (
           <span>🏗️ Architecture Planner — Technical Design &amp; Research</span>
-        ) : (
+        ) : activeModule === '4' ? (
           <span>🔨 Task Forge — Task Orchestration &amp; Management</span>
+        ) : (
+          <span>🚀 Release Manager — Versioning &amp; Changelog</span>
         )}
       </div>
 
@@ -169,13 +189,26 @@ function App() {
                 {t.label}
               </button>
             ))
-          : TABS_M4.map((t) => (
+          : activeModule === '4'
+          ? TABS_M4.map((t) => (
               <button
                 key={t.id}
                 onClick={() => setActiveTab4(t.id)}
                 style={{
                   ...tabBtnBase,
                   ...(activeTab4 === t.id ? tabBtnActive : tabBtnInactive),
+                }}
+              >
+                {t.label}
+              </button>
+            ))
+          : TABS_M5.map((t) => (
+              <button
+                key={t.id}
+                onClick={() => setActiveTab5(t.id)}
+                style={{
+                  ...tabBtnBase,
+                  ...(activeTab5 === t.id ? tabBtnActive : tabBtnInactive),
                 }}
               >
                 {t.label}
@@ -220,6 +253,15 @@ function App() {
             {activeTab4 === 'deps' && <DependencyGraphView />}
             {activeTab4 === 'progress' && <TaskStatusTracker />}
             {activeTab4 === 'export' && <GitHubIssuesExport />}
+          </>
+        )}
+        {activeModule === '5' && (
+          <>
+            {activeTab5 === 'browse' && <ReleaseListView />}
+            {activeTab5 === 'editor' && <ReleaseEditor />}
+            {activeTab5 === 'changelog' && <ChangelogViewer />}
+            {activeTab5 === 'timeline' && <ReleaseTimeline />}
+            {activeTab5 === 'summary' && <ReleaseSummary />}
           </>
         )}
       </main>
