@@ -2,7 +2,6 @@ import { useState } from 'react';
 import {
   listTestSuites,
   getDemoTestSuite,
-  type TestSuite,
   type TestSuiteListResponse,
   TEST_TYPE_COLOR,
 } from '../../api/quality';
