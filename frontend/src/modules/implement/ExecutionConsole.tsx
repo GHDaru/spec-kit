@@ -92,7 +92,7 @@ export function ExecutionConsole() {
 
       {isDemo && (
         <div style={demoBannerStyle}>
-          ⚠ Demo mode — showing sample session data. Backend not yet connected.
+          ⚠ Demo mode — showing sample session data. Connect a backend project to use live data.
         </div>
       )}
       {error && <div style={errorStyle}>⚠ {error}</div>}

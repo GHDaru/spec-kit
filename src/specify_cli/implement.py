@@ -305,7 +305,9 @@ class ExecutionSession:
         self.notes = notes
         self._task_results: list[TaskResult] = []
         self._checkpoints: list[Checkpoint] = []
-        # compliance reports indexed by report_id
+        # compliance reports are indexed by report_id for O(1) lookup when
+        # linking a report to its task result; task_results and checkpoints
+        # are ordered lists because insertion order matters for display.
         self._compliance_reports: dict[str, ComplianceReport] = {}
 
     # ------------------------------------------------------------------

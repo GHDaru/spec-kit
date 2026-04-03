@@ -4,6 +4,7 @@ import {
   getSession,
   type ExecutionSessionSchema,
   type ComplianceReportSchema,
+  type ComplianceVerdict,
   VERDICT_COLOR,
   VERDICT_ICON,
 } from '../../api/implement';
@@ -196,8 +197,11 @@ export function ComplianceReportPanel() {
                       </thead>
                       <tbody>
                         {selectedReport.findings.map((finding, idx) => {
-                          const v = finding.verdict as keyof typeof VERDICT_COLOR;
-                          const fColor = VERDICT_COLOR[v] ?? '#6b7280';
+                          const validVerdicts: ComplianceVerdict[] = ['pass', 'fail', 'warning'];
+                          const v: ComplianceVerdict = validVerdicts.includes(finding.verdict as ComplianceVerdict)
+                            ? (finding.verdict as ComplianceVerdict)
+                            : 'warning';
+                          const fColor = VERDICT_COLOR[v];
                           return (
                             <tr
                               key={idx}
@@ -217,7 +221,7 @@ export function ComplianceReportPanel() {
                                     whiteSpace: 'nowrap',
                                   }}
                                 >
-                                  {VERDICT_ICON[v as 'pass' | 'fail' | 'warning'] ?? '?'} {finding.verdict}
+                                  {VERDICT_ICON[v]} {finding.verdict}
                                 </span>
                               </td>
                               <td style={{ padding: '8px 12px', color: '#6b7280' }}>{finding.note || '—'}</td>

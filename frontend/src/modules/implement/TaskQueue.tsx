@@ -6,6 +6,7 @@ import {
   updateTaskResult,
   type ExecutionSessionSchema,
   type TaskResultSchema,
+  type TaskResultStatus,
   TASK_STATUS_COLOR,
   TASK_STATUS_ICON,
 } from '../../api/implement';
@@ -33,7 +34,7 @@ export function TaskQueue() {
   const [showAddForm, setShowAddForm] = useState(false);
   const [newTaskId, setNewTaskId] = useState('');
   const [newTaskTitle, setNewTaskTitle] = useState('');
-  const [newStatus, setNewStatus] = useState('pending');
+  const [newStatus, setNewStatus] = useState<TaskResultStatus>('pending');
   const [addLoading, setAddLoading] = useState(false);
 
   async function handleLoad() {
@@ -64,7 +65,7 @@ export function TaskQueue() {
       const result = await addTaskResult(session.project_id, session.session_id, {
         task_id: newTaskId.trim(),
         task_title: newTaskTitle.trim(),
-        status: newStatus as TaskResultSchema['status'],
+        status: newStatus,
         started_at: new Date().toISOString(),
         output: '',
         error_message: null,
@@ -181,7 +182,7 @@ export function TaskQueue() {
                   <label style={labelStyle}>Status</label>
                   <select
                     value={newStatus}
-                    onChange={(e) => setNewStatus(e.target.value)}
+                    onChange={(e) => setNewStatus(e.target.value as TaskResultStatus)}
                     style={{ ...inputStyle, flex: 'none' }}
                   >
                     {['pending', 'running', 'success', 'failure', 'skipped'].map((s) => (
